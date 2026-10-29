@@ -1,0 +1,15 @@
+# Layered on top of .lightdash/examples/full-jaffle-shop-demo/docker-compose.yml.
+# Relative paths resolve from that folder.
+services:
+  lightdash:
+    image: lightdash/lightdash:${LIGHTDASH_VERSION}
+    build: !reset null
+    user: root
+    entrypoint: /usr/bin/entrypoint.sh
+    command: pnpm start
+    volumes:
+      - ./entrypoint.sh:/usr/bin/entrypoint.sh:ro
+    environment:
+      - SITE_URL=http://localhost:8080
+      - SCHEDULER_ENABLED=true
+      - GROUPS_ENABLED=true
