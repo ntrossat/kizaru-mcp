@@ -19,6 +19,16 @@ Write tools are marked idempotent where repeating them changes nothing. Destruct
 | `list_validation_errors` | `project_uuid`, `revalidate` | Broken charts and dashboards from the last validation run, or a fresh one | `/projects/{p}/validate` |
 | `list_schedulers` | `project_uuid`, `search` | Scheduled deliveries with schedule, owner, recipients and latest run | `/schedulers/{p}/list` |
 
+## Data
+
+| Tool | Parameters | Returns | Lightdash API |
+| --- | --- | --- | --- |
+| `list_explores` | `project_uuid` | Explores with label, group and description, and errors when they don't compile | `/projects/{p}/explores` |
+| `get_explore` | `project_uuid`, `explore` | Visible dimensions and metrics, joined tables included, with field ID, label, type, table and description | `/projects/{p}/explores/{e}` |
+| `run_query` | `project_uuid`, `explore`, `dimensions`, `metrics`, `filters`, `sorts`, `limit` (500) | Column labels and rows of raw values, at most 2500 | `POST /api/v2/projects/{p}/query/metric-query`, then `/api/v2/projects/{p}/query/{q}` |
+
+A filter is `{field_id, operator, values, settings}`. Filters are combined with AND; a filter on a metric applies after aggregation. Date filters take `settings`, such as `inThePast` with `values: [30]` and `settings: {"unitOfTime": "days"}`.
+
 ## Write
 
 | Tool | Parameters | Does | Lightdash API |
@@ -37,6 +47,10 @@ Write tools are marked idempotent where repeating them changes nothing. Destruct
 Project roles are `viewer`, `interactive_viewer`, `editor`, `developer` and `admin`.
 
 ## Things to know
+
+- `run_query` needs the Interactive Viewer role or above. Viewers only see saved charts, so Lightdash refuses their queries.
+- Raw values are what the warehouse returns: Postgres counts and other big integers come as strings.
+- A query that runs longer than 120 seconds is cancelled.
 
 - Deleting content is permanent on a default Lightdash instance: it doesn't appear in the deleted-content list.
 - Lightdash's `PATCH /schedulers/{s}` needs the whole scheduler. `update_scheduler` reads it, applies the changes, and sends it all back.

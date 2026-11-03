@@ -64,6 +64,13 @@ async def test_stored_values_are_encrypted(provider):
     assert b"ld-refresh" not in raw
 
 
+async def test_values_from_another_key_count_as_missing(provider):
+    access = await add_grant(provider, 3600)
+    other = Store(provider.store._redis, Fernet.generate_key().decode())
+    assert await other.get("access", digest(access), Access) is None
+    assert await other.pop("grant", "grant", Grant) is None
+
+
 async def test_fresh_token_is_used_as_is(provider):
     await add_grant(provider, 3600)
     assert await provider.lightdash_token("grant") == "ld-access-grant"

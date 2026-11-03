@@ -1,7 +1,7 @@
 [project]
 name = "lightdash-mcp"
 version = "0.1.0"
-description = "MCP server for Lightdash admin, governance and content lifecycle"
+description = "MCP server for Lightdash: data queries, admin, governance and content lifecycle"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"

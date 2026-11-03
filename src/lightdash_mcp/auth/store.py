@@ -3,7 +3,7 @@
 import hashlib
 from typing import TypeVar
 
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 from pydantic import BaseModel
 from redis.asyncio import Redis
 from redis.asyncio.lock import Lock
@@ -29,14 +29,21 @@ class Store:
         data = self._fernet.encrypt(value.model_dump_json().encode())
         await self._redis.set(self._key(kind, key), data, ex=max(ttl, 1) if ttl is not None else None)
 
+    def _load(self, data: bytes | None, model: type[M]) -> M | None:
+        """A value encrypted with another key, as after FERNET_KEY changes, counts as missing: clients sign in again."""
+        if data is None:
+            return None
+        try:
+            return model.model_validate_json(self._fernet.decrypt(data))
+        except InvalidToken:
+            return None
+
     async def get(self, kind: str, key: str, model: type[M]) -> M | None:
-        data = await self._redis.get(self._key(kind, key))
-        return None if data is None else model.model_validate_json(self._fernet.decrypt(data))
+        return self._load(await self._redis.get(self._key(kind, key)), model)
 
     async def pop(self, kind: str, key: str, model: type[M]) -> M | None:
         """Get and delete in one step, so a single-use value can't be used twice."""
-        data = await self._redis.getdel(self._key(kind, key))
-        return None if data is None else model.model_validate_json(self._fernet.decrypt(data))
+        return self._load(await self._redis.getdel(self._key(kind, key)), model)
 
     async def delete(self, kind: str, *keys: str) -> None:
         if keys:

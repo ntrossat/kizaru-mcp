@@ -8,7 +8,25 @@
 
 ## Register an OAuth client with Lightdash
 
-The server signs users in through one OAuth client registered with Lightdash. Lightdash registration is open:
+The server signs users in through one OAuth client registered with Lightdash. Its redirect URI is `<PUBLIC_URL>/oauth/lightdash/callback`, such as `http://localhost:8000/oauth/lightdash/callback`. Change it whenever `PUBLIC_URL` changes.
+
+### In Lightdash
+
+An organization admin registers it in Lightdash:
+
+1. Open **Settings → OAuth applications** (`<LIGHTDASH_URL>/generalSettings/oauthClients`).
+2. Click **Register new OAuth application**.
+3. Fill in:
+   - **Application name**: `Lightdash MCP`, or any name. Users see it when they sign in.
+   - **Redirect URI**: `<PUBLIC_URL>/oauth/lightdash/callback`
+4. Click **Register application**.
+5. Copy the **Client ID** into `LIGHTDASH_CLIENT_ID` and the **Client secret** into `LIGHTDASH_CLIENT_SECRET`. The secret is shown only once.
+
+The client belongs to the organization: only its members can sign in with it. To change the redirect URI later, edit the application in the same list.
+
+### Through the API
+
+Lightdash registration is also open to anyone, without signing in:
 
 ```bash
 curl -X POST "$LIGHTDASH_URL/api/v1/oauth/register" \
@@ -57,7 +75,8 @@ The MCP endpoint is `<PUBLIC_URL>/mcp`, over Streamable HTTP.
 | Claude Code | `claude mcp add --transport http lightdash <PUBLIC_URL>/mcp` |
 | MCP Inspector | `npx @modelcontextprotocol/inspector`, then connect to `<PUBLIC_URL>/mcp` |
 | Claude.ai | Add a custom connector with `<PUBLIC_URL>/mcp`. Claude.ai needs a public HTTPS address |
+| ChatGPT | In developer mode, add a connector with `<PUBLIC_URL>/mcp` and OAuth. ChatGPT needs a public HTTPS address |
 
 On first use, the client opens a consent page on this server that names the client and where it returns to. After **Allow**, Lightdash asks the user to sign in and approve, then the client is connected.
 
-To reach a local server from Claude.ai, run a tunnel such as `cloudflared tunnel --url http://localhost:8000`, set `PUBLIC_URL` to the tunnel address, and register the tunnel's callback URL with Lightdash as well.
+To reach a local server from Claude.ai or ChatGPT, run a tunnel such as `cloudflared tunnel --url http://localhost:8000`, set `PUBLIC_URL` to the tunnel address, and register the tunnel's callback URL with Lightdash as well.

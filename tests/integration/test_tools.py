@@ -177,3 +177,35 @@ async def test_move_and_delete_content(admin, tool, project_uuid, space, lightda
     ok(await tool(admin, "delete_content", delete))
     spaces = ok(await tool(admin, "list_spaces", {"project_uuid": project_uuid}))
     assert space not in [s["spaceUuid"] for s in spaces]
+
+
+async def test_data_tools(admin, viewer, tool, project_uuid):
+    args = {"project_uuid": project_uuid}
+    assert "orders" in [e["name"] for e in ok(await tool(viewer, "list_explores", args))]
+
+    explore = ok(await tool(viewer, "get_explore", {**args, "explore": "orders"}))
+    assert "orders_status" in [d["fieldId"] for d in explore["dimensions"]]
+    assert "customers_first_name" in [d["fieldId"] for d in explore["dimensions"]]  # joined table
+    assert "orders_total_order_amount" in [m["fieldId"] for m in explore["metrics"]]
+
+    query = {
+        **args,
+        "explore": "orders",
+        "dimensions": ["orders_status"],
+        "metrics": ["orders_unique_order_count"],
+        "filters": [
+            {"field_id": "orders_status", "operator": "notEquals", "values": ["returned"]},
+            {"field_id": "orders_unique_order_count", "operator": "greaterThan", "values": [0]},
+        ],
+        "sorts": [{"field_id": "orders_unique_order_count", "descending": True}],
+        "limit": 3,
+    }
+    result = ok(await tool(admin, "run_query", query))
+    assert set(result["columns"]) == {"orders_status", "orders_unique_order_count"}
+    counts = [int(r["orders_unique_order_count"]) for r in result["rows"]]  # bigint counts come as strings
+    assert 0 < len(counts) <= 3 and counts == sorted(counts, reverse=True) and all(c > 0 for c in counts)
+    assert "returned" not in [r["orders_status"] for r in result["rows"]]
+
+    assert "Permission denied" in denied(await tool(viewer, "run_query", query))  # viewers only see saved charts
+    unknown = denied(await tool(admin, "run_query", {**args, "explore": "orders", "metrics": ["orders_nope"]}))
+    assert "Unknown fields in orders: orders_nope" in unknown

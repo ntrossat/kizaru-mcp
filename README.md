@@ -1,15 +1,16 @@
 # lightdash-mcp
 
-An MCP server for running a Lightdash instance: who has access to what, which content is broken or unused, and which deliveries go out. Ask an AI assistant, and it answers and acts as you, with your Lightdash permissions.
+An MCP server for open-source Lightdash: query your data from any AI assistant, and run the instance: who has access to what, which content is broken or unused, and which deliveries go out. The assistant answers and acts as you, with your Lightdash permissions.
 
 ## Principles
 
 - **Acts as you.** Users sign in with Lightdash OAuth. Every call runs with their own role, so the assistant can never do more than they can.
 - **Safe by default.** Destructive tools take `dry_run` and are marked destructive, so clients ask before running them. Lightdash tokens never leave the server.
-- **Small and focused.** Administration, governance and content lifecycle: what the official Lightdash MCP doesn't cover.
+- **Small and focused.** Querying data through the semantic layer, which the official Lightdash MCP offers only with an Enterprise license, and administration, governance and content lifecycle, which it doesn't cover.
 
 ## Features
 
+- **Data:** list explores and their dimensions and metrics, and run queries with filters, sorts and a row limit.
 - **Access:** list users, groups and roles. See who can reach a project or a space and why. Grant, change and revoke project access, and manage group membership.
 - **Content:** find charts and dashboards nobody views, list validation errors, move and delete content.
 - **Deliveries:** list scheduled deliveries with their latest run, pause, edit and delete them.

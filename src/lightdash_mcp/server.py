@@ -8,7 +8,7 @@ from redis.asyncio import Redis
 from lightdash_mcp.auth.provider import SCOPE, LightdashOAuthProvider
 from lightdash_mcp.auth.store import Store
 from lightdash_mcp.config import Settings
-from lightdash_mcp.tools import access, content, schedulers
+from lightdash_mcp.tools import access, content, data, schedulers
 
 
 def create_server(settings: Settings, redis: Redis | None = None) -> MCPServer:
@@ -16,7 +16,7 @@ def create_server(settings: Settings, redis: Redis | None = None) -> MCPServer:
     provider = LightdashOAuthProvider(settings, store)
     server = MCPServer(
         name="lightdash-mcp",
-        instructions="Admin, governance and content-lifecycle tools for Lightdash. "
+        instructions="Query Lightdash data, and administer it: access, content and deliveries. "
         "Every call runs as the signed-in Lightdash user, with their permissions.",
         auth_server_provider=provider,
         auth=AuthSettings(
@@ -33,7 +33,7 @@ def create_server(settings: Settings, redis: Redis | None = None) -> MCPServer:
     server.custom_route("/oauth/consent", methods=["GET"])(provider.consent_page)
     server.custom_route("/oauth/consent", methods=["POST"])(provider.consent_submit)
     server.custom_route("/oauth/lightdash/callback", methods=["GET"])(provider.lightdash_callback)
-    for tools in (access, content, schedulers):
+    for tools in (access, content, schedulers, data):
         tools.register(server, provider)
     return server
 

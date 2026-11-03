@@ -15,6 +15,7 @@ One Python process: an MCP server built on the official MCP Python SDK (`MCPServ
 | `tools/access.py` | Users, groups, roles, project and space access |
 | `tools/content.py` | Unused content, validation errors, moving and deleting content |
 | `tools/schedulers.py` | Scheduled deliveries |
+| `tools/data.py` | Explores, fields and metric queries |
 
 ## Sign-in
 
