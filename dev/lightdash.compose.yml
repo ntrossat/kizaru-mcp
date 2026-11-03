@@ -25,7 +25,7 @@ services:
 
   # Lightdash requires S3-compatible storage; same setup as upstream docker-compose.yml.
   minio:
-    image: coollabsio/minio:latest
+    image: coollabsio/minio:RELEASE.2025-10-15T17-29-55Z
     entrypoint: /init-minio.sh
     volumes:
       - ../../docker/init-minio.sh:/init-minio.sh:ro

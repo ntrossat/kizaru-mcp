@@ -94,7 +94,9 @@ async def test_permissions_follow_the_user(admin, viewer, tool, project_uuid, ed
     assert ok(await tool(admin, "list_roles"))
     assert "Permission denied" in denied(await tool(viewer, "list_roles"))
     assert "Permission denied" in denied(await tool(viewer, "list_schedulers", {"project_uuid": project_uuid}))
-    message = denied(await tool(viewer, "grant_project_access", {"project_uuid": project_uuid, "email": EDITOR, "role": "viewer"}))
+    message = denied(
+        await tool(viewer, "grant_project_access", {"project_uuid": project_uuid, "email": EDITOR, "role": "viewer"})
+    )
     assert "Permission denied" in message
 
 
@@ -150,7 +152,10 @@ async def test_scheduler_lifecycle(admin, tool, project_uuid, scheduler, lightda
     ok(await tool(admin, "set_scheduler_enabled", {"scheduler_uuid": scheduler, "enabled": False}))
     assert find(ok(await tool(admin, "list_schedulers", {"project_uuid": project_uuid})))["enabled"] is False
 
-    assert ok(await tool(admin, "delete_scheduler", {"scheduler_uuid": scheduler, "dry_run": True}))["wouldDelete"]["name"] == "renamed"
+    assert (
+        ok(await tool(admin, "delete_scheduler", {"scheduler_uuid": scheduler, "dry_run": True}))["wouldDelete"]["name"]
+        == "renamed"
+    )
     assert lightdash_admin.get(f"/api/v1/schedulers/{scheduler}").status_code == 200
     ok(await tool(admin, "delete_scheduler", {"scheduler_uuid": scheduler}))
     assert lightdash_admin.get(f"/api/v1/schedulers/{scheduler}").status_code == 404
@@ -163,7 +168,9 @@ async def test_move_and_delete_content(admin, tool, project_uuid, space, lightda
     chart, home = charts[0]["uuid"], charts[0]["space"]["uuid"]
 
     def chart_space() -> str:
-        return lightdash_admin.get("/api/v2/content", params={"projectUuids": project_uuid, "uuids": chart}).json()["results"]["data"][0]["space"]["uuid"]
+        return lightdash_admin.get("/api/v2/content", params={"projectUuids": project_uuid, "uuids": chart}).json()["results"][
+            "data"
+        ][0]["space"]["uuid"]
 
     move = {"project_uuid": project_uuid, "content_type": "chart", "uuid": chart}
     ok(await tool(admin, "move_content", {**move, "target_space_uuid": space}))

@@ -117,7 +117,7 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
                 f"/api/v2/content/{project_uuid}/move",
                 json={"item": _payload(item), "action": {"type": "move", "targetSpaceUuid": target_space_uuid}},
             )
-        return f"Moved {content_type} \"{item['name']}\"."
+        return f'Moved {content_type} "{item["name"]}".'
 
     @server.tool(annotations=DESTRUCTIVE)
     async def delete_content(project_uuid: Uuid, content_type: ContentType, uuid: Uuid, dry_run: bool = False) -> dict[str, Any]:
@@ -135,4 +135,3 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
                 "POST", f"/api/v2/content/{project_uuid}/delete", json={"item": _payload(item), "action": {"type": "delete"}}
             )
         return {"deleted": impact}
-

@@ -66,7 +66,9 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
     ) -> dict[str, Any]:
         """Change a scheduled delivery's name, schedule (cron expression), timezone or message.
         Fields left out stay as they are."""
-        changes = {k: v for k, v in {"name": name, "cron": cron, "timezone": timezone, "message": message}.items() if v is not None}
+        changes = {
+            k: v for k, v in {"name": name, "cron": cron, "timezone": timezone, "message": message}.items() if v is not None
+        }
         async with lightdash(provider) as ld:
             current = await ld.get(f"/api/v1/schedulers/{scheduler_uuid}")
             body = {k: current[k] for k in UPDATABLE if k in current} | changes

@@ -24,9 +24,7 @@ def create_server(settings: Settings, redis: Redis | None = None) -> MCPServer:
             resource_server_url=f"{settings.public_url}/mcp",
             # Tokens are only issued by this server, for this server.
             validate_token_resource=False,
-            client_registration_options=ClientRegistrationOptions(
-                enabled=True, valid_scopes=[SCOPE], default_scopes=[SCOPE]
-            ),
+            client_registration_options=ClientRegistrationOptions(enabled=True, valid_scopes=[SCOPE], default_scopes=[SCOPE]),
             revocation_options=RevocationOptions(enabled=True),
         ),
     )

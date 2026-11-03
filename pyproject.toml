@@ -4,6 +4,8 @@ version = "0.1.0"
 description = "MCP server for Lightdash: data queries, admin, governance and content lifecycle"
 readme = "README.md"
 license = "MIT"
+authors = [{ name = "Nicolas Trossat" }]
+keywords = ["mcp", "lightdash", "oauth", "semantic-layer"]
 requires-python = ">=3.10"
 dependencies = [
     "mcp>=2,<3",
@@ -14,6 +16,10 @@ dependencies = [
     "cryptography>=43",
 ]
 
+[project.urls]
+Repository = "https://github.com/ntrossat/kizaru-mcp"
+Issues = "https://github.com/ntrossat/kizaru-mcp/issues"
+
 [project.scripts]
 kizaru-mcp = "kizaru_mcp.server:main"
 
@@ -23,6 +29,7 @@ dev = [
     "pytest>=8",
     "pytest-asyncio>=0.24",
     "respx>=0.21",
+    "ruff>=0.17",
 ]
 
 [build-system]
@@ -33,3 +40,15 @@ build-backend = "hatchling.build"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 130
+target-version = "py310"
+
+[tool.ruff.lint]
+# Return the class itself from __aenter__, without typing_extensions.Self on Python 3.10.
+ignore = ["PYI034"]
+
+[tool.ruff.lint.per-file-ignores]
+# The integration tests drive the server over blocking HTTP on purpose.
+"tests/integration/*" = ["ASYNC210"]

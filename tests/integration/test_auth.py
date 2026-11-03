@@ -10,7 +10,12 @@ def mcp_status(server: str, access_token: str) -> int:
     response = httpx.post(
         f"{server}/mcp",
         headers={"Authorization": f"Bearer {access_token}", "Accept": "application/json, text/event-stream"},
-        json={"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "t", "version": "1"}}},
+        json={
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "t", "version": "1"}},
+        },
     )
     return response.status_code
 
@@ -40,8 +45,13 @@ def test_consent_requires_the_cookie(server):
     with httpx.Client(follow_redirects=False) as browser:
         authorize = browser.get(
             f"{server}/authorize",
-            params={"response_type": "code", "client_id": client["client_id"], "redirect_uri": "http://localhost:9999/callback",
-                    "code_challenge": "x" * 43, "code_challenge_method": "S256"},
+            params={
+                "response_type": "code",
+                "client_id": client["client_id"],
+                "redirect_uri": "http://localhost:9999/callback",
+                "code_challenge": "x" * 43,
+                "code_challenge_method": "S256",
+            },
         )
         page = browser.get(authorize.headers["location"])
         assert "test client" in page.text
@@ -90,7 +100,11 @@ async def test_refresh_rotates_and_revoke_ends_the_sign_in(server, tool):
 
     revoked = httpx.post(
         f"{server}/revoke",
-        data={"token": new["refresh_token"], "client_id": token["client"]["client_id"], "client_secret": token["client"]["client_secret"]},
+        data={
+            "token": new["refresh_token"],
+            "client_id": token["client"]["client_id"],
+            "client_secret": token["client"]["client_secret"],
+        },
     )
     assert revoked.status_code == 200
     assert mcp_status(server, new["access_token"]) == 401
@@ -104,7 +118,11 @@ async def test_sign_ins_stay_separate(server, tool):
 
     httpx.post(
         f"{server}/revoke",
-        data={"token": admin_a["access_token"], "client_id": admin_a["client"]["client_id"], "client_secret": admin_a["client"]["client_secret"]},
+        data={
+            "token": admin_a["access_token"],
+            "client_id": admin_a["client"]["client_id"],
+            "client_secret": admin_a["client"]["client_secret"],
+        },
     )
     assert mcp_status(server, admin_a["access_token"]) == 401
     assert not (await tool(admin_b, "list_roles")).is_error
@@ -115,6 +133,11 @@ def test_a_client_cannot_use_another_clients_refresh_token(server):
     other = register_client(server, "other client")
     response = httpx.post(
         f"{server}/token",
-        data={"grant_type": "refresh_token", "refresh_token": token["refresh_token"], "client_id": other["client_id"], "client_secret": other["client_secret"]},
+        data={
+            "grant_type": "refresh_token",
+            "refresh_token": token["refresh_token"],
+            "client_id": other["client_id"],
+            "client_secret": other["client_secret"],
+        },
     )
     assert response.status_code == 400

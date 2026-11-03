@@ -13,9 +13,25 @@ from kizaru_mcp.lightdash import LightdashClient
 from kizaru_mcp.tools.common import READ, Name, Uuid, lightdash
 
 Operator = Literal[
-    "isNull", "notNull", "equals", "notEquals", "startsWith", "endsWith", "include", "doesNotInclude",
-    "lessThan", "lessThanOrEqual", "greaterThan", "greaterThanOrEqual",
-    "inThePast", "notInThePast", "inTheNext", "inTheCurrent", "notInTheCurrent", "inBetween", "notInBetween",
+    "isNull",
+    "notNull",
+    "equals",
+    "notEquals",
+    "startsWith",
+    "endsWith",
+    "include",
+    "doesNotInclude",
+    "lessThan",
+    "lessThanOrEqual",
+    "greaterThan",
+    "greaterThanOrEqual",
+    "inThePast",
+    "notInThePast",
+    "inTheNext",
+    "inTheCurrent",
+    "notInTheCurrent",
+    "inBetween",
+    "notInBetween",
 ]
 
 MAX_ROWS = 2500  # Lightdash's default largest results page
@@ -39,12 +55,7 @@ def _field_id(field: dict[str, Any]) -> str:
 
 
 def _fields(explore: dict[str, Any], kind: Literal["dimensions", "metrics"]) -> dict[str, dict[str, Any]]:
-    return {
-        _field_id(f): f
-        for table in explore["tables"].values()
-        for f in table[kind].values()
-        if not f.get("hidden")
-    }
+    return {_field_id(f): f for table in explore["tables"].values() for f in table[kind].values() if not f.get("hidden")}
 
 
 def _summary(field: dict[str, Any]) -> dict[str, Any]:

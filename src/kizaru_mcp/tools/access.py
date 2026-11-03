@@ -44,7 +44,9 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
             {
                 "groupUuid": g["uuid"],
                 "name": g["name"],
-                "members": [{"userUuid": m["userUuid"], "name": full_name(m), "email": m.get("email")} for m in g.get("members") or []],
+                "members": [
+                    {"userUuid": m["userUuid"], "name": full_name(m), "email": m.get("email")} for m in g.get("members") or []
+                ],
             }
             for g in groups
         ]

@@ -4,7 +4,7 @@ DEMO_DIR := $(LIGHTDASH_DIR)/examples/full-jaffle-shop-demo
 COMPOSE := LIGHTDASH_VERSION=$(LIGHTDASH_VERSION) docker compose -p kizaru-mcp-lightdash \
 	-f $(DEMO_DIR)/docker-compose.yml -f dev/lightdash.compose.yml
 
-.PHONY: dev setup lightdash wait test reset logs stop clean
+.PHONY: dev setup lightdash wait test lint reset logs stop clean
 
 dev: setup
 	uv run kizaru-mcp
@@ -29,6 +29,10 @@ wait:
 
 test:
 	uv run pytest
+
+lint:
+	uv run ruff check .
+	uv run ruff format --check .
 
 # Lightdash sets up an empty database when it starts.
 reset:

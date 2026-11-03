@@ -34,7 +34,11 @@ TOKEN_URL = f"{LIGHTDASH}/api/v1/oauth/token"
 @pytest.fixture
 def provider() -> LightdashOAuthProvider:
     settings = Settings(
-        _env_file=None, lightdash_url=LIGHTDASH, lightdash_client_id="id", lightdash_client_secret="secret", fernet_key=Fernet.generate_key().decode()
+        _env_file=None,
+        lightdash_url=LIGHTDASH,
+        lightdash_client_id="id",
+        lightdash_client_secret="secret",
+        fernet_key=Fernet.generate_key().decode(),
     )
     return LightdashOAuthProvider(settings, Store(FakeAsyncRedis(), settings.fernet_key))
 
@@ -82,7 +86,9 @@ async def test_fresh_token_is_used_as_is(provider):
 async def test_concurrent_requests_refresh_once(provider):
     await add_grant(provider, 10)
     route = respx.post(TOKEN_URL).mock(
-        return_value=httpx.Response(200, json={"access_token": "ld-access-2", "refresh_token": "ld-refresh-2", "expires_in": 3600})
+        return_value=httpx.Response(
+            200, json={"access_token": "ld-access-2", "refresh_token": "ld-refresh-2", "expires_in": 3600}
+        )
     )
     tokens = await asyncio.gather(*(provider.lightdash_token("grant") for _ in range(5)))
     assert tokens == ["ld-access-2"] * 5
@@ -165,7 +171,9 @@ async def test_refresh_token_survives_lightdash_being_down(provider):
     assert await provider.store.get("refresh", digest(refresh.token), Refresh) == refresh
 
     respx.post(TOKEN_URL).mock(
-        return_value=httpx.Response(200, json={"access_token": "ld-access-2", "refresh_token": "ld-refresh-2", "expires_in": 3600})
+        return_value=httpx.Response(
+            200, json={"access_token": "ld-access-2", "refresh_token": "ld-refresh-2", "expires_in": 3600}
+        )
     )
     token = await provider.exchange_refresh_token(None, refresh, [])
     assert await provider.load_access_token(token.access_token)
@@ -266,7 +274,9 @@ async def consent_page(provider: LightdashOAuthProvider, redirect_uri: str) -> t
     )
     location = await provider.authorize(client, params)
     query = location.split("?", 1)[1].encode()
-    response = await provider.consent_page(Request({"type": "http", "method": "GET", "path": "/oauth/consent", "query_string": query, "headers": []}))
+    response = await provider.consent_page(
+        Request({"type": "http", "method": "GET", "path": "/oauth/consent", "query_string": query, "headers": []})
+    )
     return response.body.decode(), response.headers["set-cookie"]
 
 

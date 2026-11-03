@@ -60,7 +60,11 @@ See [Configuration](docs/configuration.md).
 
 ## Contributing
 
-Issues and pull requests are welcome. Run `make test` before opening a pull request, and update `docs/` in the same change as the code.
+Issues and pull requests are welcome. Run `make lint` and `make test` before opening a pull request, and update `docs/` in the same change as the code.
+
+## Security
+
+Report vulnerabilities privately, as in [SECURITY.md](SECURITY.md).
 
 ## License
 

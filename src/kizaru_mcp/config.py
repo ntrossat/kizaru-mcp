@@ -21,9 +21,7 @@ class Settings(BaseSettings):
 
     def check(self) -> None:
         missing = [
-            name.upper()
-            for name in ("lightdash_client_id", "lightdash_client_secret", "fernet_key")
-            if not getattr(self, name)
+            name.upper() for name in ("lightdash_client_id", "lightdash_client_secret", "fernet_key") if not getattr(self, name)
         ]
         if missing:
             raise SystemExit(f"Missing settings: {', '.join(missing)}. See .env.example.")

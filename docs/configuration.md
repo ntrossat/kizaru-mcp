@@ -68,6 +68,12 @@ uv run kizaru-mcp
 
 The MCP endpoint is `<PUBLIC_URL>/mcp`, over Streamable HTTP.
 
+## Run it publicly
+
+- Serve it over HTTPS behind a reverse proxy, with `PUBLIC_URL` set to the HTTPS address. `HOST` stays `127.0.0.1` when the proxy runs on the same machine.
+- Rate-limit `/register`, `/authorize` and `/token` at the proxy. Registration is open, as MCP clients need, and each registration or sign-in request is kept in Redis: registrations 30 days after their last use, sign-in requests 10 minutes.
+- Keep Redis private, and `FERNET_KEY` and `LIGHTDASH_CLIENT_SECRET` out of the repository.
+
 ## Connect a client
 
 | Client | How |

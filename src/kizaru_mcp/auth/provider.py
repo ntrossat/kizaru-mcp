@@ -305,9 +305,22 @@ class LightdashOAuthProvider:
             if not grant:
                 raise TokenError("invalid_grant", "Sign-in ended")
             access, refresh = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
-            common = dict(client_id=grant.client_id, scopes=scopes, resource=resource, subject=grant.subject, grant_id=grant_id)
-            await self.store.put("access", digest(access), Access(token=access, expires_at=int(time.time()) + ACCESS_TTL, **common), ACCESS_TTL)
-            await self.store.put("refresh", digest(refresh), Refresh(token=refresh, expires_at=int(time.time()) + REFRESH_TTL, **common), REFRESH_TTL)
+            common = {
+                "client_id": grant.client_id,
+                "scopes": scopes,
+                "resource": resource,
+                "subject": grant.subject,
+                "grant_id": grant_id,
+            }
+            await self.store.put(
+                "access", digest(access), Access(token=access, expires_at=int(time.time()) + ACCESS_TTL, **common), ACCESS_TTL
+            )
+            await self.store.put(
+                "refresh",
+                digest(refresh),
+                Refresh(token=refresh, expires_at=int(time.time()) + REFRESH_TTL, **common),
+                REFRESH_TTL,
+            )
             await self.store.delete("access", grant.access_digest)
             await self.store.delete("refresh", grant.refresh_digest)
             grant.access_digest, grant.refresh_digest = digest(access), digest(refresh)

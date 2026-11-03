@@ -24,6 +24,7 @@ Fill in `.env` first, as in [Configuration](configuration.md): register the OAut
 | `make dev` | Set up everything, then run the MCP server |
 | `make setup` | Set up everything, without the server |
 | `make test` | Run the tests |
+| `make lint` | Check the code with Ruff: lint and formatting |
 | `make reset` | Restart Lightdash with a clean database and the sample data |
 | `make logs` | Follow the Lightdash logs |
 | `make stop` | Stop Lightdash and Redis |
