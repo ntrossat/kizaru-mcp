@@ -25,10 +25,11 @@ Needs Docker and [uv](https://docs.astral.sh/uv/).
 
 ```bash
 git clone https://github.com/ntrossat/kizaru-mcp && cd kizaru-mcp
+cp .env.example .env   # an OAuth client registered with the local Lightdash and a FERNET_KEY
 make dev
 ```
 
-This starts Lightdash with demo data on http://localhost:8080, registers the server's OAuth client with it, and runs the MCP server on http://localhost:8000/mcp. Nothing to configure.
+This starts Lightdash with demo data on http://localhost:8080 and runs the MCP server on http://localhost:8000/mcp. Register the OAuth client once Lightdash is up, as in [Configuration](docs/configuration.md), fill in `.env`, then run `make dev` again.
 
 Add `http://localhost:8000/mcp` to your MCP client, then sign in as `demo@lightdash.com` with `demo_password!`:
 

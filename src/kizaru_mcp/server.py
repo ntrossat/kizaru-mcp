@@ -1,3 +1,4 @@
+import signal
 from urllib.parse import urlparse
 
 from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions, RevocationOptions
@@ -50,9 +51,14 @@ def transport_security(settings: Settings) -> TransportSecuritySettings:
 def main() -> None:
     settings = Settings()
     settings.check()
-    create_server(settings).run(
-        "streamable-http", host=settings.host, port=settings.port, transport_security=transport_security(settings)
-    )
+    # Ctrl+C, or another `make dev` taking over, is a normal stop: no traceback, no error.
+    signal.signal(signal.SIGTERM, signal.default_int_handler)
+    try:
+        create_server(settings).run(
+            "streamable-http", host=settings.host, port=settings.port, transport_security=transport_security(settings)
+        )
+    except KeyboardInterrupt:
+        pass
 
 
 if __name__ == "__main__":
