@@ -13,3 +13,6 @@ dist/
 
 # Local Lightdash checkout (make dev)
 .lightdash/
+
+# macOS
+.DS_Store
