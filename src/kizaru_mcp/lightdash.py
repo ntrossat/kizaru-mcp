@@ -27,13 +27,8 @@ class LightdashClient:
     Paths are absolute from the site root (`/api/v1/...`, `/api/v2/...`).
     """
 
-    def __init__(self, base_url: str, access_token: str, transport: httpx.AsyncBaseTransport | None = None) -> None:
-        self._http = httpx.AsyncClient(
-            base_url=base_url.rstrip("/"),
-            headers={"Authorization": f"Bearer {access_token}"},
-            timeout=60,
-            transport=transport,
-        )
+    def __init__(self, base_url: str, access_token: str) -> None:
+        self._http = httpx.AsyncClient(base_url=base_url, headers={"Authorization": f"Bearer {access_token}"}, timeout=60)
 
     async def request(self, method: str, path: str, **kwargs: Any) -> Any:
         response = await self._http.request(method, path, **kwargs)

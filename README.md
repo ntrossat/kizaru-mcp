@@ -57,7 +57,6 @@ See [Configuration](docs/configuration.md).
 - [Tools](docs/tools.md): every tool and the Lightdash API it calls
 - [Architecture](docs/architecture.md): sign-in, tokens, storage and errors
 - [Development](docs/development.md): local Lightdash, make targets and tests
-- [Roadmap](docs/roadmap.md): what is done and what is next
 
 ## Contributing
 

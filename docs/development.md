@@ -10,9 +10,9 @@ make dev
 
 `make dev` sets everything up, then runs the MCP server:
 
-1. Sparse-clones Lightdash at `LIGHTDASH_VERSION` into `.lightdash/` (git-ignored): the jaffle shop demo, its Docker files and `swagger.json`.
-2. Starts the demo with the same image tag, layered with `dev/lightdash.compose.yml` (site URL, scheduler, groups, and MinIO for the S3 storage Lightdash requires) and `dev/entrypoint.sh`, which sets up the database only when it is empty and fixes upstream's reset and seed.
-3. Starts Redis, runs `uv sync`, and waits for Lightdash on http://localhost:8080.
+1. Sparse-clones Lightdash at `LIGHTDASH_VERSION` into `.lightdash/` (git-ignored): the jaffle shop demo and its Docker files.
+2. Starts the demo with the same image tag, layered with `dev/lightdash.compose.yml` (site URL, scheduler, groups, MinIO for the S3 storage Lightdash requires, and Redis) and `dev/entrypoint.sh`, which sets up the database only when it is empty and fixes upstream's reset and seed.
+3. Waits for Lightdash on http://localhost:8080.
 4. Runs the MCP server on http://localhost:8000/mcp, with `.env`.
 
 Fill in `.env` first, as in [Configuration](configuration.md): register the OAuth client with the local Lightdash and generate a Fernet key.
@@ -21,14 +21,12 @@ Fill in `.env` first, as in [Configuration](configuration.md): register the OAut
 
 | Command | Does |
 | --- | --- |
-| `make dev` | Set up everything, then run the MCP server. Ctrl+C stops the containers too |
+| `make dev` | Set up everything, then run the MCP server |
 | `make setup` | Set up everything, without the server |
-| `make run` | Run the MCP server |
 | `make test` | Run the tests |
 | `make reset` | Restart Lightdash with a clean database and the sample data |
 | `make logs` | Follow the Lightdash logs |
 | `make stop` | Stop Lightdash and Redis |
-| `make down` | Stop and delete the Lightdash and Redis containers |
 | `make clean` | Stop and delete the containers, volumes and `.lightdash/` |
 
 Use another Lightdash release with `make dev LIGHTDASH_VERSION=<tag>`. Run `make clean` before switching.
@@ -65,13 +63,3 @@ make test
 
 - The integration tests register their own OAuth clients, start the server on port 8765, and sign in as `demo@` (admin) and `demo3@` (viewer). They need nothing in `.env`, and they are skipped when Lightdash is down.
 - They change the local Lightdash: they create and delete spaces and schedulers, grant and revoke access, and move a chart and back. They expect the seeded demo data, so run `make reset` if a run was interrupted.
-
-## Lightdash API models
-
-The tools don't use generated models: each picks the fields it returns. Running `datamodel-codegen` on `swagger.json` doesn't work as-is (3.93.6):
-
-- With `--output models.py`, it stops with "Modular references require an output directory": 601 of 3,121 schema names contain dots.
-- With an output directory, it fails on file names longer than the OS limit.
-- After renaming the schemas, it writes 32,000 lines that don't import: an email `pattern` isn't a valid regex for pydantic-core.
-
-The schema also has errors: creating a chart scheduler requires `appUuid` and `appName`, which only apply to data apps. Send them as `null`.

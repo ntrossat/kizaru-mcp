@@ -10,7 +10,7 @@ One Python process: an MCP server built on the official MCP Python SDK (`MCPServ
 | `config.py` | Settings from the environment |
 | `auth/provider.py` | The OAuth provider: clients, consent page, Lightdash callback, codes and tokens, upstream refresh |
 | `auth/store.py` | Encrypted Redis storage and locks |
-| `lightdash/client.py` | The async Lightdash API client and its errors |
+| `lightdash.py` | The async Lightdash API client and its errors |
 | `tools/common.py` | A Lightdash client for the signed-in user, error mapping, tool annotations |
 | `tools/access.py` | Users, groups, roles, project and space access |
 | `tools/content.py` | Unused content, validation errors, moving and deleting content |

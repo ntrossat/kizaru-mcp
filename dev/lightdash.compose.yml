@@ -33,3 +33,9 @@ services:
       - MINIO_ROOT_USER=minioadmin
       - MINIO_ROOT_PASSWORD=minioadmin
       - MINIO_DEFAULT_BUCKETS=default
+
+  # For the MCP server, not Lightdash.
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"

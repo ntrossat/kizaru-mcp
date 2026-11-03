@@ -5,7 +5,7 @@ from cryptography.fernet import Fernet
 from mcp.server.mcpserver.exceptions import ToolError
 
 from kizaru_mcp.config import Settings
-from kizaru_mcp.lightdash.client import LightdashClient, LightdashError
+from kizaru_mcp.lightdash import LightdashClient, LightdashError
 from kizaru_mcp.server import create_server
 
 

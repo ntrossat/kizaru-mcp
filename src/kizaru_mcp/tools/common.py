@@ -9,7 +9,7 @@ from mcp.types import ToolAnnotations
 from pydantic import Field
 
 from kizaru_mcp.auth.provider import Access, LightdashOAuthProvider, SignInRequired
-from kizaru_mcp.lightdash.client import LightdashClient, LightdashError
+from kizaru_mcp.lightdash import LightdashClient, LightdashError
 
 RECONNECT = "Your Lightdash sign-in has ended. Reconnect this MCP server to sign in again."
 UNREACHABLE = "Couldn't reach Lightdash. Try again in a moment."
@@ -39,7 +39,7 @@ async def lightdash(provider: LightdashOAuthProvider) -> AsyncIterator[Lightdash
     except httpx.HTTPError:
         raise ToolError(UNREACHABLE) from None
 
-    async with LightdashClient(provider.settings.lightdash_base, access_token) as client:
+    async with LightdashClient(provider.settings.lightdash_url, access_token) as client:
         try:
             yield client
         except LightdashError as error:

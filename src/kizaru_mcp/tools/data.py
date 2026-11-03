@@ -9,7 +9,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import BaseModel
 
 from kizaru_mcp.auth.provider import LightdashOAuthProvider
-from kizaru_mcp.lightdash.client import LightdashClient
+from kizaru_mcp.lightdash import LightdashClient
 from kizaru_mcp.tools.common import READ, Name, Uuid, lightdash
 
 Operator = Literal[

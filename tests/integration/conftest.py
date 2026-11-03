@@ -4,8 +4,6 @@ The server runs in a thread on PUBLIC_PORT. Sign-in goes through the whole chain
 registration, authorize, consent page, Lightdash login and consent, callback, token.
 """
 
-import base64
-import hashlib
 import html
 import re
 import secrets
@@ -23,6 +21,7 @@ from mcp import Client
 from mcp.client.streamable_http import streamable_http_client
 from redis.asyncio import Redis
 
+from kizaru_mcp.auth.provider import _challenge
 from kizaru_mcp.config import Settings
 from kizaru_mcp.server import create_server, transport_security
 
@@ -80,10 +79,6 @@ def server(settings: Settings):
     yield PUBLIC
     instance.should_exit = True
     thread.join(5)
-
-
-def _challenge(verifier: str) -> str:
-    return base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
 
 
 def register_client(server: str, name: str = "test client") -> dict[str, Any]:

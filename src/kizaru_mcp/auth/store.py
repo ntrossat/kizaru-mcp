@@ -48,9 +48,8 @@ class Store:
     async def touch(self, kind: str, key: str, ttl: int) -> None:
         await self._redis.expire(self._key(kind, key), ttl)
 
-    async def delete(self, kind: str, *keys: str) -> None:
-        if keys:
-            await self._redis.delete(*(self._key(kind, key) for key in keys))
+    async def delete(self, kind: str, key: str) -> None:
+        await self._redis.delete(self._key(kind, key))
 
     def lock(self, kind: str, key: str) -> Lock:
         return self._redis.lock(self._key(f"lock:{kind}", key), timeout=30, blocking_timeout=30)

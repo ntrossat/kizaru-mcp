@@ -1,4 +1,3 @@
-import signal
 from urllib.parse import urlparse
 
 from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions, RevocationOptions
@@ -21,8 +20,8 @@ def create_server(settings: Settings, redis: Redis | None = None) -> MCPServer:
         "Every call runs as the signed-in Lightdash user, with their permissions.",
         auth_server_provider=provider,
         auth=AuthSettings(
-            issuer_url=settings.public_base,
-            resource_server_url=f"{settings.public_base}/mcp",
+            issuer_url=settings.public_url,
+            resource_server_url=f"{settings.public_url}/mcp",
             # Tokens are only issued by this server, for this server.
             validate_token_resource=False,
             client_registration_options=ClientRegistrationOptions(
@@ -41,7 +40,7 @@ def create_server(settings: Settings, redis: Redis | None = None) -> MCPServer:
 
 def transport_security(settings: Settings) -> TransportSecuritySettings:
     """The SDK's localhost defaults, plus PUBLIC_URL's host so requests through a tunnel are accepted."""
-    public = urlparse(settings.public_base)
+    public = urlparse(settings.public_url)
     return TransportSecuritySettings(
         allowed_hosts=["127.0.0.1:*", "localhost:*", "[::1]:*", public.netloc],
         allowed_origins=["http://127.0.0.1:*", "http://localhost:*", "http://[::1]:*", f"{public.scheme}://{public.netloc}"],
@@ -51,8 +50,7 @@ def transport_security(settings: Settings) -> TransportSecuritySettings:
 def main() -> None:
     settings = Settings()
     settings.check()
-    # Ctrl+C, or another `make dev` taking over, is a normal stop: no traceback, no error.
-    signal.signal(signal.SIGTERM, signal.default_int_handler)
+    # Ctrl+C is a normal stop: no traceback.
     try:
         create_server(settings).run(
             "streamable-http", host=settings.host, port=settings.port, transport_security=transport_security(settings)

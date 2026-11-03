@@ -1,3 +1,4 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,6 +14,11 @@ class Settings(BaseSettings):
     host: str = "127.0.0.1"
     port: int = 8000
 
+    @field_validator("lightdash_url", "public_url")
+    @classmethod
+    def _strip_slash(cls, url: str) -> str:
+        return url.rstrip("/")
+
     def check(self) -> None:
         missing = [
             name.upper()
@@ -23,13 +29,5 @@ class Settings(BaseSettings):
             raise SystemExit(f"Missing settings: {', '.join(missing)}. See .env.example.")
 
     @property
-    def lightdash_base(self) -> str:
-        return self.lightdash_url.rstrip("/")
-
-    @property
-    def public_base(self) -> str:
-        return self.public_url.rstrip("/")
-
-    @property
     def callback_url(self) -> str:
-        return f"{self.public_base}/oauth/lightdash/callback"
+        return f"{self.public_url}/oauth/lightdash/callback"

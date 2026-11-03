@@ -8,7 +8,7 @@ from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
 from kizaru_mcp.auth.provider import LightdashOAuthProvider
-from kizaru_mcp.lightdash.client import LightdashClient
+from kizaru_mcp.lightdash import LightdashClient
 from kizaru_mcp.tools.common import DESTRUCTIVE, READ, WRITE, Uuid, lightdash
 
 ContentType = Literal["chart", "dashboard", "space"]

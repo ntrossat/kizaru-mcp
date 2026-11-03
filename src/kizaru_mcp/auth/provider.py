@@ -87,10 +87,10 @@ def _challenge(verifier: str) -> str:
 
 
 class LightdashOAuthProvider:
-    def __init__(self, settings: Settings, store: Store, transport: httpx.AsyncBaseTransport | None = None) -> None:
+    def __init__(self, settings: Settings, store: Store) -> None:
         self.settings = settings
         self.store = store
-        self._http = httpx.AsyncClient(base_url=settings.lightdash_base, timeout=30, transport=transport)
+        self._http = httpx.AsyncClient(base_url=settings.lightdash_url, timeout=30)
 
     # Client registration
 
@@ -109,7 +109,7 @@ class LightdashOAuthProvider:
         transaction_id = secrets.token_urlsafe(32)
         transaction = Transaction(client_id=client.client_id, params=params, verifier=secrets.token_urlsafe(48))
         await self.store.put("transaction", transaction_id, transaction, TRANSACTION_TTL)
-        return f"{self.settings.public_base}/oauth/consent?{urlencode({'transaction': transaction_id})}"
+        return f"{self.settings.public_url}/oauth/consent?{urlencode({'transaction': transaction_id})}"
 
     async def consent_page(self, request: Request) -> Response:
         transaction_id = request.query_params.get("transaction", "")
@@ -147,7 +147,7 @@ class LightdashOAuthProvider:
 
     def _secure(self, request: Request) -> bool:
         """Behind a tunnel or proxy the request may look like plain HTTP: PUBLIC_URL says what browsers use."""
-        return self.settings.public_base.startswith("https://") or request.url.scheme == "https"
+        return self.settings.public_url.startswith("https://") or request.url.scheme == "https"
 
     async def consent_submit(self, request: Request) -> Response:
         form = await request.form()
@@ -181,7 +181,7 @@ class LightdashOAuthProvider:
             "code_challenge_method": "S256",
         }
         # The consent cookie stays until the callback: it ties the sign-in to this browser.
-        return RedirectResponse(f"{self.settings.lightdash_base}/api/v1/oauth/authorize?{urlencode(query)}", 303)
+        return RedirectResponse(f"{self.settings.lightdash_url}/api/v1/oauth/authorize?{urlencode(query)}", 303)
 
     async def lightdash_callback(self, request: Request) -> Response:
         transaction_id = request.query_params.get("state", "")
