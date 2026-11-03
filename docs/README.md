@@ -1,6 +1,6 @@
 # Documentation
 
-lightdash-mcp is an MCP server for Lightdash: data queries through the semantic layer, administration, governance and content lifecycle. Every tool call runs as the signed-in Lightdash user, with that user's permissions.
+kizaru-mcp is an MCP server for Lightdash: data queries through the semantic layer, administration, governance and content lifecycle. Every tool call runs as the signed-in Lightdash user, with that user's permissions.
 
 | Page | Covers |
 | --- | --- |

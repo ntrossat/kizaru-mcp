@@ -10,7 +10,7 @@ from redis.asyncio.lock import Lock
 
 M = TypeVar("M", bound=BaseModel)
 
-PREFIX = "lightdash-mcp"
+PREFIX = "kizaru-mcp"
 
 
 def digest(token: str) -> str:
@@ -44,6 +44,9 @@ class Store:
     async def pop(self, kind: str, key: str, model: type[M]) -> M | None:
         """Get and delete in one step, so a single-use value can't be used twice."""
         return self._load(await self._redis.getdel(self._key(kind, key)), model)
+
+    async def touch(self, kind: str, key: str, ttl: int) -> None:
+        await self._redis.expire(self._key(kind, key), ttl)
 
     async def delete(self, kind: str, *keys: str) -> None:
         if keys:

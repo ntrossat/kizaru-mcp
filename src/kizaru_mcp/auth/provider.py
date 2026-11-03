@@ -26,8 +26,8 @@ from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, RedirectResponse, Response
 
-from lightdash_mcp.auth.store import Store, digest
-from lightdash_mcp.config import Settings
+from kizaru_mcp.auth.store import Store, digest
+from kizaru_mcp.config import Settings
 
 SCOPE = "lightdash"
 LIGHTDASH_SCOPE = "read write"
@@ -36,7 +36,8 @@ CODE_TTL = 5 * 60
 ACCESS_TTL = 60 * 60
 REFRESH_TTL = 14 * 24 * 60 * 60  # Lightdash's refresh-token lifetime
 REFRESH_MARGIN = 60
-CONSENT_COOKIE = "lightdash_mcp_consent"  # one per transaction, suffixed with its digest
+CLIENT_TTL = 30 * 24 * 60 * 60  # renewed on use: registration is open, so unused clients must expire
+CONSENT_COOKIE = "kizaru_mcp_consent"  # one per transaction, suffixed with its digest
 
 
 class SignInRequired(Exception):
@@ -94,10 +95,13 @@ class LightdashOAuthProvider:
     # Client registration
 
     async def get_client(self, client_id: str) -> OAuthClientInformationFull | None:
-        return await self.store.get("client", client_id, OAuthClientInformationFull)
+        client = await self.store.get("client", client_id, OAuthClientInformationFull)
+        if client:
+            await self.store.touch("client", client_id, CLIENT_TTL)
+        return client
 
     async def register_client(self, client_info: OAuthClientInformationFull) -> None:
-        await self.store.put("client", client_info.client_id, client_info)
+        await self.store.put("client", client_info.client_id, client_info, CLIENT_TTL)
 
     # Authorization: client -> consent page -> Lightdash -> callback -> client
 
@@ -117,10 +121,12 @@ class LightdashOAuthProvider:
         transaction.csrf = secrets.token_urlsafe(32)
         await self.store.put("transaction", transaction_id, transaction, TRANSACTION_TTL)
         client_name = html.escape(client.client_name or client.client_id)
-        redirect_host = html.escape(urlparse(str(transaction.params.redirect_uri)).netloc or "")
+        redirect_uri = urlparse(str(transaction.params.redirect_uri))
+        # A custom scheme, such as myapp://, has no host to show: show the whole address instead.
+        destination = html.escape(redirect_uri.netloc if redirect_uri.scheme in ("http", "https") else redirect_uri.geturl())
         body = f"""
             <p><strong>{client_name}</strong> wants to use Lightdash as you.</p>
-            <p class="muted">It will act with your Lightdash permissions. You'll return to <strong>{redirect_host}</strong>.</p>
+            <p class="muted">It will act with your Lightdash permissions. You'll return to <strong>{destination}</strong>.</p>
             <form method="post">
               <input type="hidden" name="transaction" value="{html.escape(transaction_id)}">
               <input type="hidden" name="csrf" value="{transaction.csrf}">
@@ -135,9 +141,13 @@ class LightdashOAuthProvider:
             path="/oauth",
             httponly=True,
             samesite="lax",
-            secure=request.url.scheme == "https",
+            secure=self._secure(request),
         )
         return response
+
+    def _secure(self, request: Request) -> bool:
+        """Behind a tunnel or proxy the request may look like plain HTTP: PUBLIC_URL says what browsers use."""
+        return self.settings.public_base.startswith("https://") or request.url.scheme == "https"
 
     async def consent_submit(self, request: Request) -> Response:
         form = await request.form()
@@ -155,7 +165,7 @@ class LightdashOAuthProvider:
         if form.get("action") != "allow":
             await self.store.delete("transaction", transaction_id)
             response = _redirect_to_client(transaction, error="access_denied")
-            response.delete_cookie(_consent_cookie(transaction_id), path="/oauth")
+            response.delete_cookie(_consent_cookie(transaction_id), path="/oauth", secure=self._secure(request))
             return response
 
         transaction.approved = True
@@ -187,7 +197,7 @@ class LightdashOAuthProvider:
             return _page("Sign-in expired", "<p>Start again from your MCP client, in this browser.</p>", status=400)
 
         response = await self._finish_sign_in(transaction, request.query_params.get("code"), request.query_params.get("error"))
-        response.delete_cookie(_consent_cookie(transaction_id), path="/oauth")
+        response.delete_cookie(_consent_cookie(transaction_id), path="/oauth", secure=self._secure(request))
         return response
 
     async def _finish_sign_in(self, transaction: Transaction, code: str | None, error: str | None) -> Response:
@@ -251,7 +261,7 @@ class LightdashOAuthProvider:
 
     async def load_authorization_code(self, client: OAuthClientInformationFull, authorization_code: str) -> Code | None:
         code = await self.store.get("code", digest(authorization_code), Code)
-        return code if code and code.client_id == client.client_id else None
+        return code if code and _same(code.code, authorization_code) and code.client_id == client.client_id else None
 
     async def exchange_authorization_code(self, client: OAuthClientInformationFull, authorization_code: Code) -> OAuthToken:
         if not await self.store.pop("code", digest(authorization_code.code), Code):
@@ -260,7 +270,7 @@ class LightdashOAuthProvider:
 
     async def load_refresh_token(self, client: OAuthClientInformationFull, refresh_token: str) -> Refresh | None:
         token = await self.store.get("refresh", digest(refresh_token), Refresh)
-        return token if token and token.client_id == client.client_id else None
+        return token if token and _same(token.token, refresh_token) and token.client_id == client.client_id else None
 
     async def exchange_refresh_token(
         self, client: OAuthClientInformationFull, refresh_token: Refresh, scopes: list[str]
@@ -281,7 +291,7 @@ class LightdashOAuthProvider:
 
     async def load_access_token(self, token: str) -> Access | None:
         access = await self.store.get("access", digest(token), Access)
-        if not access or (access.expires_at and access.expires_at < time.time()):
+        if not access or not _same(access.token, token) or (access.expires_at and access.expires_at < time.time()):
             return None
         grant = await self.store.get("grant", access.grant_id, Grant)
         return access if grant and grant.access_digest == digest(token) else None
@@ -367,6 +377,11 @@ class LightdashOAuthProvider:
             await self.store.delete("access", grant.access_digest)
             await self.store.delete("refresh", grant.refresh_digest)
         return grant
+
+
+def _same(stored: str, given: str) -> bool:
+    """A stored token is the one it was looked up by, not a value copied under its key in Redis."""
+    return secrets.compare_digest(stored.encode(), given.encode())
 
 
 def _oauth_error(response: httpx.Response) -> str | None:

@@ -4,8 +4,8 @@ from typing import Any
 
 from mcp.server.mcpserver import MCPServer
 
-from lightdash_mcp.auth.provider import LightdashOAuthProvider
-from lightdash_mcp.tools.common import DESTRUCTIVE, READ, WRITE, data, lightdash
+from kizaru_mcp.auth.provider import LightdashOAuthProvider
+from kizaru_mcp.tools.common import DESTRUCTIVE, READ, WRITE, Uuid, data, lightdash
 
 # Fields Lightdash expects back when a scheduler is updated: PATCH takes the whole scheduler.
 UPDATABLE = (
@@ -41,7 +41,7 @@ def _summary(s: dict[str, Any]) -> dict[str, Any]:
 
 def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
     @server.tool(annotations=READ)
-    async def list_schedulers(project_uuid: str, search: str | None = None) -> list[dict[str, Any]]:
+    async def list_schedulers(project_uuid: Uuid, search: str | None = None) -> list[dict[str, Any]]:
         """List a project's scheduled deliveries with their schedule, owner, recipients and latest run."""
         async with lightdash(provider) as ld:
             schedulers = data(
@@ -50,7 +50,7 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
         return [_summary(s) for s in schedulers]
 
     @server.tool(annotations=WRITE)
-    async def set_scheduler_enabled(scheduler_uuid: str, enabled: bool) -> str:
+    async def set_scheduler_enabled(scheduler_uuid: Uuid, enabled: bool) -> str:
         """Pause (enabled=false) or resume (enabled=true) a scheduled delivery."""
         async with lightdash(provider) as ld:
             await ld.request("PATCH", f"/api/v1/schedulers/{scheduler_uuid}/enabled", json={"enabled": enabled})
@@ -58,7 +58,7 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
 
     @server.tool(annotations=WRITE)
     async def update_scheduler(
-        scheduler_uuid: str,
+        scheduler_uuid: Uuid,
         name: str | None = None,
         cron: str | None = None,
         timezone: str | None = None,
@@ -74,7 +74,7 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
         return _summary(updated)
 
     @server.tool(annotations=DESTRUCTIVE)
-    async def delete_scheduler(scheduler_uuid: str, dry_run: bool = False) -> dict[str, Any]:
+    async def delete_scheduler(scheduler_uuid: Uuid, dry_run: bool = False) -> dict[str, Any]:
         """Delete a scheduled delivery. Use dry_run to see it first."""
         async with lightdash(provider) as ld:
             scheduler = _summary(await ld.get(f"/api/v1/schedulers/{scheduler_uuid}"))

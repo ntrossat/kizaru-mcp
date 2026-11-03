@@ -1,5 +1,5 @@
 [project]
-name = "lightdash-mcp"
+name = "kizaru-mcp"
 version = "0.1.0"
 description = "MCP server for Lightdash: data queries, admin, governance and content lifecycle"
 readme = "README.md"
@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.scripts]
-lightdash-mcp = "lightdash_mcp.server:main"
+kizaru-mcp = "kizaru_mcp.server:main"
 
 [dependency-groups]
 dev = [

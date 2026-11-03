@@ -11,7 +11,7 @@ from pathlib import Path
 import httpx
 from cryptography.fernet import Fernet
 
-from lightdash_mcp.config import Settings
+from kizaru_mcp.config import Settings
 
 
 def read(path: Path) -> dict[str, str]:
@@ -32,7 +32,7 @@ def client_is_known(settings: Settings, client_id: str, client_secret: str) -> b
 def register(settings: Settings) -> dict[str, str]:
     response = httpx.post(
         f"{settings.lightdash_base}/api/v1/oauth/register",
-        json={"client_name": "lightdash-mcp-dev", "redirect_uris": [settings.callback_url], "scope": "read write"},
+        json={"client_name": "kizaru-mcp-dev", "redirect_uris": [settings.callback_url], "scope": "read write"},
     )
     response.raise_for_status()
     client = response.json()

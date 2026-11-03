@@ -4,8 +4,8 @@ from typing import Any, Literal
 
 from mcp.server.mcpserver import MCPServer
 
-from lightdash_mcp.auth.provider import LightdashOAuthProvider
-from lightdash_mcp.tools.common import CREATE, DESTRUCTIVE, READ, WRITE, data, full_name, lightdash, pick
+from kizaru_mcp.auth.provider import LightdashOAuthProvider
+from kizaru_mcp.tools.common import CREATE, DESTRUCTIVE, READ, WRITE, Uuid, data, full_name, lightdash, pick
 
 ProjectRole = Literal["viewer", "interactive_viewer", "editor", "developer", "admin"]
 
@@ -58,7 +58,7 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
         return [pick(r, "roleUuid", "name", "description", "ownerType", "level", "scopes") for r in roles]
 
     @server.tool(annotations=READ)
-    async def list_project_access(project_uuid: str) -> dict[str, Any]:
+    async def list_project_access(project_uuid: Uuid) -> dict[str, Any]:
         """Show who can access a project: each user's effective role (from their organization role,
         a direct grant or a group), their direct grant if any, and the groups with access."""
         async with lightdash(provider) as ld:
@@ -85,7 +85,7 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
         }
 
     @server.tool(annotations=READ)
-    async def list_spaces(project_uuid: str) -> list[dict[str, Any]]:
+    async def list_spaces(project_uuid: Uuid) -> list[dict[str, Any]]:
         """List a project's spaces, nested ones included, with their content counts."""
         async with lightdash(provider) as ld:
             spaces = await ld.get(f"/api/v1/projects/{project_uuid}/spaces")
@@ -103,7 +103,7 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
         ]
 
     @server.tool(annotations=READ)
-    async def list_space_access(project_uuid: str, space_uuid: str) -> dict[str, Any]:
+    async def list_space_access(project_uuid: Uuid, space_uuid: Uuid) -> dict[str, Any]:
         """Show who can access a space and why: direct access, or inherited from the organization,
         the project or a parent space."""
         async with lightdash(provider) as ld:
@@ -127,7 +127,7 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
         }
 
     @server.tool(annotations=CREATE)
-    async def grant_project_access(project_uuid: str, email: str, role: ProjectRole) -> str:
+    async def grant_project_access(project_uuid: Uuid, email: str, role: ProjectRole) -> str:
         """Give an organization member direct access to a project. Fails if they already have a direct grant:
         use update_project_access to change it."""
         async with lightdash(provider) as ld:
@@ -137,14 +137,14 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
         return f"Granted {role} on the project to {email}."
 
     @server.tool(annotations=WRITE)
-    async def update_project_access(project_uuid: str, user_uuid: str, role: ProjectRole) -> str:
+    async def update_project_access(project_uuid: Uuid, user_uuid: Uuid, role: ProjectRole) -> str:
         """Change a user's direct project role."""
         async with lightdash(provider) as ld:
             await ld.request("PATCH", f"/api/v1/projects/{project_uuid}/access/{user_uuid}", json={"role": role})
         return f"Changed the user's project role to {role}."
 
     @server.tool(annotations=DESTRUCTIVE)
-    async def revoke_project_access(project_uuid: str, user_uuid: str, dry_run: bool = False) -> dict[str, Any]:
+    async def revoke_project_access(project_uuid: Uuid, user_uuid: Uuid, dry_run: bool = False) -> dict[str, Any]:
         """Remove a user's direct project grant. Access through their organization role or a group remains.
         Use dry_run to see the grant that would be removed."""
         async with lightdash(provider) as ld:
@@ -159,14 +159,14 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
         return {"removed": grant}
 
     @server.tool(annotations=WRITE)
-    async def add_group_member(group_uuid: str, user_uuid: str) -> str:
+    async def add_group_member(group_uuid: Uuid, user_uuid: Uuid) -> str:
         """Add a user to a group."""
         async with lightdash(provider) as ld:
             await ld.request("PUT", f"/api/v1/groups/{group_uuid}/members/{user_uuid}")
         return "The user is a member of the group."
 
     @server.tool(annotations=DESTRUCTIVE)
-    async def remove_group_member(group_uuid: str, user_uuid: str, dry_run: bool = False) -> dict[str, Any]:
+    async def remove_group_member(group_uuid: Uuid, user_uuid: Uuid, dry_run: bool = False) -> dict[str, Any]:
         """Remove a user from a group, and with it any access the group gave them.
         Use dry_run to check the membership first."""
         async with lightdash(provider) as ld:

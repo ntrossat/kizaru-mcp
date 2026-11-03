@@ -2,16 +2,16 @@ LIGHTDASH_VERSION ?= 3.93.6
 LIGHTDASH_DIR := .lightdash
 DEMO_DIR := $(LIGHTDASH_DIR)/examples/full-jaffle-shop-demo
 DEV_ENV := $(LIGHTDASH_DIR)/mcp.env
-LIGHTDASH := LIGHTDASH_VERSION=$(LIGHTDASH_VERSION) docker compose -p lightdash-mcp-lightdash \
+LIGHTDASH := LIGHTDASH_VERSION=$(LIGHTDASH_VERSION) docker compose -p kizaru-mcp-lightdash \
 	-f $(DEMO_DIR)/docker-compose.yml -f dev/lightdash.compose.yml
-REDIS := docker compose -p lightdash-mcp -f compose.dev.yml
+REDIS := docker compose -p kizaru-mcp -f compose.dev.yml
 
 .PHONY: dev setup lightdash wait redis install run test reset logs down clean
 
 # The OAuth client and Fernet key for the local Lightdash come from $(DEV_ENV), not .env.
 dev: setup
 	uv run python dev/env.py $(DEV_ENV)
-	uv run --env-file $(DEV_ENV) lightdash-mcp
+	uv run --env-file $(DEV_ENV) kizaru-mcp
 
 setup: lightdash redis install wait
 
@@ -39,7 +39,7 @@ install:
 	uv sync
 
 run:
-	uv run lightdash-mcp
+	uv run kizaru-mcp
 
 test:
 	uv run pytest

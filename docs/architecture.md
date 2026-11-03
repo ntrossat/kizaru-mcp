@@ -20,7 +20,7 @@ One Python process: an MCP server built on the official MCP Python SDK (`MCPServ
 ## Sign-in
 
 1. The MCP client registers itself (`/register`) and opens `/authorize`.
-2. The server saves the request for 10 minutes and shows its consent page (`/oauth/consent`), which names the client and where it returns to. One Lightdash OAuth client serves every MCP client, so Lightdash's own consent page can't tell them apart. The form is protected by a CSRF token in a `SameSite=Lax` cookie, one per sign-in, and the page can't be framed.
+2. The server saves the request for 10 minutes and shows its consent page (`/oauth/consent`), which names the client and where it returns to. One Lightdash OAuth client serves every MCP client, so Lightdash's own consent page can't tell them apart. The form is protected by a CSRF token in a `SameSite=Lax` cookie, one per sign-in, marked `Secure` when `PUBLIC_URL` is HTTPS, and the page can't be framed.
 3. On **Allow**, the server redirects to Lightdash's `/authorize` with its own PKCE and the saved request's id as `state`.
 4. Lightdash signs the user in and returns to `/oauth/lightdash/callback`. The callback only goes on in the browser that approved the consent page, checked with the same cookie, so a Lightdash link taken from someone else's consent can't send this user's sign-in to another client. The server exchanges the code, reads the user from `/api/v1/user`, creates a grant, and returns its own single-use code to the client. If Lightdash fails, the client gets `error=server_error`.
 5. The client exchanges that code, with its PKCE verifier, for the server's tokens.
@@ -36,7 +36,7 @@ One Python process: an MCP server built on the official MCP Python SDK (`MCPServ
 
 ## Storage
 
-Redis keys are `lightdash-mcp:{client,transaction,code,access,refresh,grant}:<id>`. Token keys are sha256 digests of the tokens, and every value is encrypted with `FERNET_KEY`. Client registrations are kept. Everything else expires: sign-in requests in 10 minutes, codes in 5, tokens and grants with their lifetimes.
+Redis keys are `kizaru-mcp:{client,transaction,code,access,refresh,grant}:<id>`. Token keys are sha256 digests of the tokens, and every value is encrypted with `FERNET_KEY`. Everything expires: client registrations 30 days after their last use, sign-in requests in 10 minutes, codes in 5, tokens and grants with their lifetimes.
 
 ## Errors
 

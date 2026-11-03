@@ -5,17 +5,17 @@ from mcp.server.mcpserver import MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
 from redis.asyncio import Redis
 
-from lightdash_mcp.auth.provider import SCOPE, LightdashOAuthProvider
-from lightdash_mcp.auth.store import Store
-from lightdash_mcp.config import Settings
-from lightdash_mcp.tools import access, content, data, schedulers
+from kizaru_mcp.auth.provider import SCOPE, LightdashOAuthProvider
+from kizaru_mcp.auth.store import Store
+from kizaru_mcp.config import Settings
+from kizaru_mcp.tools import access, content, data, schedulers
 
 
 def create_server(settings: Settings, redis: Redis | None = None) -> MCPServer:
     store = Store(redis or Redis.from_url(settings.redis_url), settings.fernet_key)
     provider = LightdashOAuthProvider(settings, store)
     server = MCPServer(
-        name="lightdash-mcp",
+        name="kizaru-mcp",
         instructions="Query Lightdash data, and administer it: access, content and deliveries. "
         "Every call runs as the signed-in Lightdash user, with their permissions.",
         auth_server_provider=provider,

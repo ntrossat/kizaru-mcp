@@ -10,9 +10,11 @@ from mcp.server.auth.middleware.auth_context import auth_context_var
 from mcp.server.auth.middleware.bearer_auth import AuthenticatedUser
 from mcp.server.auth.provider import AuthorizationParams
 from mcp.server.mcpserver.exceptions import ToolError
+from mcp.shared.auth import OAuthClientInformationFull
 from starlette.requests import Request
 
-from lightdash_mcp.auth.provider import (
+from kizaru_mcp.auth.provider import (
+    CLIENT_TTL,
     Access,
     Grant,
     LightdashOAuthProvider,
@@ -21,9 +23,9 @@ from lightdash_mcp.auth.provider import (
     Transaction,
     _consent_cookie,
 )
-from lightdash_mcp.auth.store import Store, digest
-from lightdash_mcp.config import Settings
-from lightdash_mcp.tools.common import RECONNECT, lightdash
+from kizaru_mcp.auth.store import Store, digest
+from kizaru_mcp.config import Settings
+from kizaru_mcp.tools.common import RECONNECT, lightdash
 
 LIGHTDASH = "http://lightdash.test"
 TOKEN_URL = f"{LIGHTDASH}/api/v1/oauth/token"
@@ -60,7 +62,7 @@ def signed_in_as(access: Access):
 
 async def test_stored_values_are_encrypted(provider):
     await add_grant(provider, 3600)
-    raw = await provider.store._redis.get("lightdash-mcp:grant:grant")
+    raw = await provider.store._redis.get("kizaru-mcp:grant:grant")
     assert b"ld-refresh" not in raw
 
 
@@ -231,3 +233,53 @@ async def test_failed_callback_returns_to_the_client(provider):
     response = await provider.lightdash_callback(request)
     assert response.status_code == 302
     assert response.headers["location"].startswith("http://localhost:9999/callback?error=server_error")
+
+
+async def test_tokens_copied_under_another_key_are_refused(provider):
+    access = await add_grant(provider, 3600)
+    redis = provider.store._redis
+    refresh = Refresh(token="real", client_id="client", scopes=[], grant_id="grant")
+    await provider.store.put("refresh", digest("real"), refresh)
+    await redis.copy(f"kizaru-mcp:refresh:{digest('real')}", f"kizaru-mcp:refresh:{digest('forged')}")
+    await redis.copy(f"kizaru-mcp:access:{digest(access)}", f"kizaru-mcp:access:{digest('forged')}")
+    client = OAuthClientInformationFull(client_id="client", redirect_uris=["http://localhost:9999/callback"])
+    assert await provider.load_refresh_token(client, "real")
+    assert await provider.load_refresh_token(client, "forged") is None
+    assert await provider.load_access_token("forged") is None
+
+
+async def test_clients_expire_unless_used(provider):
+    client = OAuthClientInformationFull(client_id="client", redirect_uris=["http://localhost:9999/callback"])
+    await provider.register_client(client)
+    key = "kizaru-mcp:client:client"
+    assert 0 < await provider.store._redis.ttl(key) <= CLIENT_TTL
+    await provider.store._redis.expire(key, 60)
+    assert await provider.get_client("client")
+    assert await provider.store._redis.ttl(key) > 60
+
+
+async def consent_page(provider: LightdashOAuthProvider, redirect_uri: str) -> tuple[str, str]:
+    client = OAuthClientInformationFull(client_id="client", client_name="App", redirect_uris=[redirect_uri])
+    await provider.register_client(client)
+    params = AuthorizationParams(
+        state=None, scopes=[], code_challenge="x" * 43, redirect_uri=redirect_uri, redirect_uri_provided_explicitly=True
+    )
+    location = await provider.authorize(client, params)
+    query = location.split("?", 1)[1].encode()
+    response = await provider.consent_page(Request({"type": "http", "method": "GET", "path": "/oauth/consent", "query_string": query, "headers": []}))
+    return response.body.decode(), response.headers["set-cookie"]
+
+
+async def test_consent_page_shows_where_the_user_returns(provider):
+    body, _ = await consent_page(provider, "http://localhost:9999/callback")
+    assert "return to <strong>localhost:9999</strong>" in body
+    body, _ = await consent_page(provider, "myapp://oauth/done")
+    assert "return to <strong>myapp://oauth/done</strong>" in body
+
+
+async def test_consent_cookie_is_secure_behind_an_https_public_url(provider):
+    _, cookie = await consent_page(provider, "http://localhost:9999/callback")
+    assert "secure" not in cookie.lower()
+    provider.settings.public_url = "https://mcp.example.com"
+    _, cookie = await consent_page(provider, "http://localhost:9999/callback")
+    assert "secure" in cookie.lower()

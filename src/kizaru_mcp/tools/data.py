@@ -8,9 +8,9 @@ from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import BaseModel
 
-from lightdash_mcp.auth.provider import LightdashOAuthProvider
-from lightdash_mcp.lightdash.client import LightdashClient
-from lightdash_mcp.tools.common import READ, lightdash
+from kizaru_mcp.auth.provider import LightdashOAuthProvider
+from kizaru_mcp.lightdash.client import LightdashClient
+from kizaru_mcp.tools.common import READ, Name, Uuid, lightdash
 
 Operator = Literal[
     "isNull", "notNull", "equals", "notEquals", "startsWith", "endsWith", "include", "doesNotInclude",
@@ -77,7 +77,7 @@ def _filter_group(filters: list[Filter]) -> dict[str, Any] | None:
 
 def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
     @server.tool(annotations=READ)
-    async def list_explores(project_uuid: str) -> list[dict[str, Any]]:
+    async def list_explores(project_uuid: Uuid) -> list[dict[str, Any]]:
         """List the explores of a project: the tables you can query, with what each one holds."""
         async with lightdash(provider) as ld:
             explores = await ld.get(f"/api/v1/projects/{project_uuid}/explores")
@@ -93,7 +93,7 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
         ]
 
     @server.tool(annotations=READ)
-    async def get_explore(project_uuid: str, explore: str) -> dict[str, Any]:
+    async def get_explore(project_uuid: Uuid, explore: Name) -> dict[str, Any]:
         """List an explore's dimensions and metrics, joined tables included. Their field IDs go into run_query.
         Date dimensions come with one field per interval, such as orders_order_date_month."""
         async with lightdash(provider) as ld:
@@ -109,8 +109,8 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
 
     @server.tool(annotations=READ)
     async def run_query(
-        project_uuid: str,
-        explore: str,
+        project_uuid: Uuid,
+        explore: Name,
         dimensions: list[str] | None = None,
         metrics: list[str] | None = None,
         filters: list[Filter] | None = None,

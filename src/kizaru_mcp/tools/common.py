@@ -1,14 +1,15 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Annotated, Any
 
 import httpx
 from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
+from pydantic import Field
 
-from lightdash_mcp.auth.provider import Access, LightdashOAuthProvider, SignInRequired
-from lightdash_mcp.lightdash.client import LightdashClient, LightdashError
+from kizaru_mcp.auth.provider import Access, LightdashOAuthProvider, SignInRequired
+from kizaru_mcp.lightdash.client import LightdashClient, LightdashError
 
 RECONNECT = "Your Lightdash sign-in has ended. Reconnect this MCP server to sign in again."
 UNREACHABLE = "Couldn't reach Lightdash. Try again in a moment."
@@ -17,6 +18,10 @@ READ = ToolAnnotations(read_only_hint=True, open_world_hint=False)
 WRITE = ToolAnnotations(read_only_hint=False, destructive_hint=False, idempotent_hint=True, open_world_hint=False)
 CREATE = ToolAnnotations(read_only_hint=False, destructive_hint=False, idempotent_hint=False, open_world_hint=False)
 DESTRUCTIVE = ToolAnnotations(read_only_hint=False, destructive_hint=True, idempotent_hint=True, open_world_hint=False)
+
+# Arguments that go into Lightdash URL paths: a `../` or `?` in one would reach another endpoint.
+Uuid = Annotated[str, Field(pattern=r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")]
+Name = Annotated[str, Field(pattern=r"^[\w-]+$")]
 
 
 @asynccontextmanager

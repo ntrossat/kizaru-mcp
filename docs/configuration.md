@@ -17,7 +17,7 @@ An organization admin registers it in Lightdash:
 1. Open **Settings → OAuth applications** (`<LIGHTDASH_URL>/generalSettings/oauthClients`).
 2. Click **Register new OAuth application**.
 3. Fill in:
-   - **Application name**: `Lightdash MCP`, or any name. Users see it when they sign in.
+   - **Application name**: `Kizaru`, or any name. Users see it when they sign in.
    - **Redirect URI**: `<PUBLIC_URL>/oauth/lightdash/callback`
 4. Click **Register application**.
 5. Copy the **Client ID** into `LIGHTDASH_CLIENT_ID` and the **Client secret** into `LIGHTDASH_CLIENT_SECRET`. The secret is shown only once.
@@ -31,7 +31,7 @@ Lightdash registration is also open to anyone, without signing in:
 ```bash
 curl -X POST "$LIGHTDASH_URL/api/v1/oauth/register" \
   -H 'Content-Type: application/json' \
-  -d '{"client_name":"lightdash-mcp","redirect_uris":["<PUBLIC_URL>/oauth/lightdash/callback"],"scope":"read write"}'
+  -d '{"client_name":"kizaru-mcp","redirect_uris":["<PUBLIC_URL>/oauth/lightdash/callback"],"scope":"read write"}'
 ```
 
 Keep the `client_id` and `client_secret` it returns. Lightdash accepts `http://localhost` redirect URIs.
@@ -63,7 +63,7 @@ The server stops with `Missing settings: ...` when a required variable is empty.
 
 ```bash
 uv sync
-uv run lightdash-mcp
+uv run kizaru-mcp
 ```
 
 The MCP endpoint is `<PUBLIC_URL>/mcp`, over Streamable HTTP.

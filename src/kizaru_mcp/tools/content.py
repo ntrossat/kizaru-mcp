@@ -7,9 +7,9 @@ from typing import Any, Literal
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
-from lightdash_mcp.auth.provider import LightdashOAuthProvider
-from lightdash_mcp.lightdash.client import LightdashClient
-from lightdash_mcp.tools.common import DESTRUCTIVE, READ, WRITE, lightdash
+from kizaru_mcp.auth.provider import LightdashOAuthProvider
+from kizaru_mcp.lightdash.client import LightdashClient
+from kizaru_mcp.tools.common import DESTRUCTIVE, READ, WRITE, Uuid, lightdash
 
 ContentType = Literal["chart", "dashboard", "space"]
 
@@ -54,7 +54,7 @@ def _summary(item: dict[str, Any]) -> dict[str, Any]:
 def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
     @server.tool(annotations=READ)
     async def find_unused_content(
-        project_uuid: str, unused_days: int = 90, content_type: Literal["chart", "dashboard"] | None = None
+        project_uuid: Uuid, unused_days: int = 90, content_type: Literal["chart", "dashboard"] | None = None
     ) -> list[dict[str, Any]]:
         """Find charts and dashboards nobody has viewed in `unused_days` days, never-viewed first.
         Content created within that window is left out."""
@@ -79,7 +79,7 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
         ]
 
     @server.tool(annotations=READ)
-    async def list_validation_errors(project_uuid: str, revalidate: bool = False) -> list[dict[str, Any]]:
+    async def list_validation_errors(project_uuid: Uuid, revalidate: bool = False) -> list[dict[str, Any]]:
         """List broken charts and dashboards: fields that no longer exist, bad configurations.
         Results come from the last validation run; set revalidate to run a fresh one first."""
         async with lightdash(provider) as ld:
@@ -108,7 +108,7 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
         ]
 
     @server.tool(annotations=WRITE)
-    async def move_content(project_uuid: str, content_type: ContentType, uuid: str, target_space_uuid: str) -> str:
+    async def move_content(project_uuid: Uuid, content_type: ContentType, uuid: Uuid, target_space_uuid: Uuid) -> str:
         """Move a chart, dashboard or space into another space."""
         async with lightdash(provider) as ld:
             item = await _item(ld, project_uuid, content_type, uuid)
@@ -120,7 +120,7 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
         return f"Moved {content_type} \"{item['name']}\"."
 
     @server.tool(annotations=DESTRUCTIVE)
-    async def delete_content(project_uuid: str, content_type: ContentType, uuid: str, dry_run: bool = False) -> dict[str, Any]:
+    async def delete_content(project_uuid: Uuid, content_type: ContentType, uuid: Uuid, dry_run: bool = False) -> dict[str, Any]:
         """Delete a chart, dashboard or space. A space is deleted with everything in it.
         Use dry_run to see what would be deleted."""
         async with lightdash(provider) as ld:

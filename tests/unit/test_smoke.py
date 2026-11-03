@@ -2,15 +2,29 @@ import httpx
 import pytest
 import respx
 from cryptography.fernet import Fernet
+from mcp.server.mcpserver.exceptions import ToolError
 
-from lightdash_mcp.config import Settings
-from lightdash_mcp.lightdash.client import LightdashClient, LightdashError
-from lightdash_mcp.server import create_server
+from kizaru_mcp.config import Settings
+from kizaru_mcp.lightdash.client import LightdashClient, LightdashError
+from kizaru_mcp.server import create_server
 
 
 def test_create_server():
     settings = Settings(_env_file=None, lightdash_client_id="id", lightdash_client_secret="secret", fernet_key=Fernet.generate_key().decode())
-    assert create_server(settings).name == "lightdash-mcp"
+    assert create_server(settings).name == "kizaru-mcp"
+
+
+async def test_tool_arguments_cannot_reach_other_endpoints():
+    settings = Settings(_env_file=None, lightdash_client_id="id", lightdash_client_secret="secret", fernet_key=Fernet.generate_key().decode())
+    server = create_server(settings)
+    project = "3675b69e-8324-4110-bdca-059031aa8da3"
+    for name, arguments in [
+        ("update_project_access", {"project_uuid": project, "user_uuid": "../../../org/users/x", "role": "admin"}),
+        ("list_spaces", {"project_uuid": "x?evil=1"}),
+        ("get_explore", {"project_uuid": project, "explore": "../orders"}),
+    ]:
+        with pytest.raises(ToolError, match="validation error"):
+            await server.call_tool(name, arguments)
 
 
 def test_missing_settings_stop_the_server():

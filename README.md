@@ -1,4 +1,4 @@
-# lightdash-mcp
+# kizaru-mcp
 
 An MCP server for open-source Lightdash: query your data from any AI assistant, and run the instance: who has access to what, which content is broken or unused, and which deliveries go out. The assistant answers and acts as you, with your Lightdash permissions.
 
@@ -24,7 +24,7 @@ See [all tools](docs/tools.md).
 Needs Docker and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-git clone https://github.com/ntrossat/lightdash-mcp && cd lightdash-mcp
+git clone https://github.com/ntrossat/kizaru-mcp && cd kizaru-mcp
 make dev
 ```
 
@@ -45,7 +45,7 @@ Needs Python 3.10+, uv, Redis, and Lightdash with its OAuth server (open source,
 ```bash
 cp .env.example .env   # the Lightdash URL, its OAuth client and a FERNET_KEY
 uv sync
-uv run lightdash-mcp
+uv run kizaru-mcp
 ```
 
 See [Configuration](docs/configuration.md).
