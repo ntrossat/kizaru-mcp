@@ -22,6 +22,7 @@ $(DEMO_DIR):
 # Set on every run, so existing checkouts get new paths too.
 lightdash: $(DEMO_DIR)
 	git -C $(LIGHTDASH_DIR) sparse-checkout set docker examples/full-jaffle-shop-demo packages/backend/src/generated
+	@grep -qx mcp.env $(LIGHTDASH_DIR)/.git/info/exclude || echo mcp.env >> $(LIGHTDASH_DIR)/.git/info/exclude
 	$(LIGHTDASH) up -d
 
 wait:
