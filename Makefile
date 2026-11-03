@@ -1,22 +1,27 @@
 LIGHTDASH_VERSION ?= 3.93.6
 LIGHTDASH_DIR := .lightdash
 DEMO_DIR := $(LIGHTDASH_DIR)/examples/full-jaffle-shop-demo
+DEV_ENV := $(LIGHTDASH_DIR)/mcp.env
 LIGHTDASH := LIGHTDASH_VERSION=$(LIGHTDASH_VERSION) docker compose -p lightdash-mcp-lightdash \
 	-f $(DEMO_DIR)/docker-compose.yml -f dev/lightdash.compose.yml
 REDIS := docker compose -p lightdash-mcp -f compose.dev.yml
 
-.PHONY: dev setup lightdash wait redis install run test reset logs down clean oauth-client
+.PHONY: dev setup lightdash wait redis install run test reset logs down clean
 
-dev: setup run
+# The OAuth client and Fernet key for the local Lightdash come from $(DEV_ENV), not .env.
+dev: setup
+	uv run python dev/env.py $(DEV_ENV)
+	uv run --env-file $(DEV_ENV) lightdash-mcp
 
 setup: lightdash redis install wait
 
 $(DEMO_DIR):
 	git clone -q --depth 1 --branch $(LIGHTDASH_VERSION) --filter=blob:none --sparse \
 		https://github.com/lightdash/lightdash $(LIGHTDASH_DIR)
-	git -C $(LIGHTDASH_DIR) sparse-checkout set examples/full-jaffle-shop-demo packages/backend/src/generated
 
+# Set on every run, so existing checkouts get new paths too.
 lightdash: $(DEMO_DIR)
+	git -C $(LIGHTDASH_DIR) sparse-checkout set docker examples/full-jaffle-shop-demo packages/backend/src/generated
 	$(LIGHTDASH) up -d
 
 wait:
@@ -53,9 +58,3 @@ clean:
 	-$(LIGHTDASH) down -v
 	-$(REDIS) down -v
 	rm -rf $(LIGHTDASH_DIR)
-
-oauth-client:
-	@curl -s -X POST http://localhost:8080/api/v1/oauth/register \
-		-H 'Content-Type: application/json' \
-		-d '{"client_name":"lightdash-mcp-dev","redirect_uris":["http://localhost:8000/oauth/lightdash/callback"],"scope":"read write"}'
-	@echo

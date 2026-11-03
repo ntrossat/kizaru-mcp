@@ -12,3 +12,24 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     host: str = "127.0.0.1"
     port: int = 8000
+
+    def check(self) -> None:
+        missing = [
+            name.upper()
+            for name in ("lightdash_client_id", "lightdash_client_secret", "fernet_key")
+            if not getattr(self, name)
+        ]
+        if missing:
+            raise SystemExit(f"Missing settings: {', '.join(missing)}. See .env.example.")
+
+    @property
+    def lightdash_base(self) -> str:
+        return self.lightdash_url.rstrip("/")
+
+    @property
+    def public_base(self) -> str:
+        return self.public_url.rstrip("/")
+
+    @property
+    def callback_url(self) -> str:
+        return f"{self.public_base}/oauth/lightdash/callback"

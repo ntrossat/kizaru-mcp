@@ -8,8 +8,28 @@ services:
     entrypoint: /usr/bin/entrypoint.sh
     command: pnpm start
     volumes:
-      - ./entrypoint.sh:/usr/bin/entrypoint.sh:ro
+      - ../../../dev/entrypoint.sh:/usr/bin/entrypoint.sh:ro
+    depends_on:
+      - minio
     environment:
       - SITE_URL=http://localhost:8080
       - SCHEDULER_ENABLED=true
       - GROUPS_ENABLED=true
+      - DBT_DEMO_DIR=/usr/app
+      - S3_ENDPOINT=http://minio:9000
+      - S3_REGION=us-east-1
+      - S3_BUCKET=default
+      - S3_ACCESS_KEY=minioadmin
+      - S3_SECRET_KEY=minioadmin
+      - S3_FORCE_PATH_STYLE=true
+
+  # Lightdash requires S3-compatible storage; same setup as upstream docker-compose.yml.
+  minio:
+    image: coollabsio/minio:latest
+    entrypoint: /init-minio.sh
+    volumes:
+      - ../../docker/init-minio.sh:/init-minio.sh:ro
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+      - MINIO_DEFAULT_BUCKETS=default
