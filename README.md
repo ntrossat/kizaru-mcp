@@ -14,12 +14,17 @@ Works with Claude, ChatGPT, Claude Code and any MCP client that supports OAuth.
 
 ![Claude Code querying revenue by country and explaining project access through Kizaru](docs/demo.gif)
 
-## What you can ask
+## Use cases
 
-- "What was our revenue by country last quarter?"
-- "Who can see the Finance space, and why?"
-- "Which dashboards has nobody opened in 90 days?"
-- "Pause the weekly sales delivery."
+- ["Create a monthly report of Jaffle Shop."](docs/use-cases.md#monthly-report)
+- ["What was our revenue by country last quarter?"](docs/use-cases.md#revenue-by-country)
+- ["Who can see the Finance space, and why?"](docs/use-cases.md#space-access)
+- ["Which dashboards has nobody opened in 90 days? Move them to an Archive space."](docs/use-cases.md#unused-dashboards)
+- ["List the broken charts and what's wrong with them."](docs/use-cases.md#broken-charts)
+- ["Give alice@example.com editor access to Jaffle Shop."](docs/use-cases.md#project-access)
+- ["Pause the weekly sales delivery."](docs/use-cases.md#deliveries)
+
+See [all use cases with screenshots](docs/use-cases.md).
 
 ## Features
 
@@ -91,6 +96,7 @@ Web clients such as ChatGPT or Claude on the web can't reach `localhost`. Give t
 ## Documentation
 
 - [Configuration](docs/configuration.md): run the server and connect clients
+- [Use cases](docs/use-cases.md): example prompts with screenshots
 - [Tools](docs/tools.md): every tool and the Lightdash API it calls
 - [Architecture](docs/architecture.md): sign-in, tokens, storage and errors
 - [Development](docs/development.md): local Lightdash, make targets and tests
