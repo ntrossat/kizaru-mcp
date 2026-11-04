@@ -388,6 +388,22 @@ async def test_consent_page_shows_where_the_user_returns(provider):
     assert "return to <strong>myapp://oauth/done</strong>" in body
 
 
+async def test_approved_consent_cannot_be_reopened_in_another_browser(provider):
+    await consent_page(provider, "http://localhost:9999/callback")
+    transaction_id = (await provider.store._redis.keys("kizaru-mcp:transaction:*"))[0].decode().rsplit(":", 1)[1]
+    transaction = await provider.store.get("transaction", transaction_id, Transaction)
+    transaction.approved = True
+    await provider.store.put("transaction", transaction_id, transaction)
+
+    query = f"transaction={transaction_id}".encode()
+    response = await provider.consent_page(
+        Request({"type": "http", "method": "GET", "path": "/oauth/consent", "query_string": query, "headers": []})
+    )
+    assert response.status_code == 400
+    assert "set-cookie" not in response.headers
+    assert (await provider.store.get("transaction", transaction_id, Transaction)).csrf == transaction.csrf
+
+
 async def test_consent_cookie_is_secure_behind_an_https_public_url(provider):
     _, cookie = await consent_page(provider, "http://localhost:9999/callback")
     assert "secure" not in cookie.lower()

@@ -117,7 +117,8 @@ class LightdashOAuthProvider:
         transaction_id = request.query_params.get("transaction", "")
         transaction = await self.store.get("transaction", transaction_id, Transaction)
         client = transaction and await self.get_client(transaction.client_id)
-        if not transaction or not client:
+        # Once approved, the consent cookie must not change: it names the only browser that can finish the sign-in.
+        if not transaction or transaction.approved or not client:
             return _page("Sign-in expired", "<p>Start again from your MCP client.</p>", status=400)
 
         transaction.csrf = secrets.token_urlsafe(32)
