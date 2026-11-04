@@ -66,6 +66,14 @@ uv sync
 uv run kizaru-mcp
 ```
 
+Or with Docker, which listens on `0.0.0.0` inside the container:
+
+```bash
+docker run --env-file .env -p 8000:8000 ghcr.io/ntrossat/kizaru-mcp
+```
+
+Inside the container, `localhost` is the container itself. Point `REDIS_URL` at an address the container can reach, such as `redis://host.docker.internal:6379/0` for Redis on the host. `LIGHTDASH_URL` must be reachable from both the container and your browser, which signs in there.
+
 The MCP endpoint is `<PUBLIC_URL>/mcp`, over Streamable HTTP.
 
 ## Behind a proxy or a tunnel

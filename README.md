@@ -74,6 +74,12 @@ Needs Python 3.15+, uv, Redis, and a Lightdash instance (tested on 3.93.6). Its 
    uv run kizaru-mcp
    ```
 
+   Or run the Docker image instead, as in [Run](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/configuration.md#run):
+
+   ```bash
+   docker run --env-file .env -p 8000:8000 ghcr.io/ntrossat/kizaru-mcp
+   ```
+
 Web clients such as ChatGPT or Claude on the web can't reach `localhost`. Give the server a public HTTPS address, as in [Behind a proxy or a tunnel](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/configuration.md#behind-a-proxy-or-a-tunnel).
 
 ## Documentation
