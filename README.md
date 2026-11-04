@@ -47,35 +47,15 @@ See [all tools](docs/tools.md).
 
 Needs Docker and [uv](https://docs.astral.sh/uv/).
 
-1. Clone the repository and start Lightdash with demo data on http://localhost:8080. The MCP server stops at first, asking for its settings.
+```bash
+git clone https://github.com/ntrossat/kizaru-mcp && cd kizaru-mcp && make dev
+```
 
-   ```bash
-   git clone https://github.com/ntrossat/kizaru-mcp && cd kizaru-mcp
-   cp .env.example .env
-   make dev
-   ```
+This starts Lightdash with demo data on http://localhost:8080 and the MCP server on http://localhost:8000/mcp. Add it to your MCP client, then sign in as `demo@lightdash.com` with `demo_password!`:
 
-2. Register an OAuth client with the local Lightdash, and copy its `client_id` and `client_secret` into `LIGHTDASH_CLIENT_ID` and `LIGHTDASH_CLIENT_SECRET` in `.env`:
-
-   ```bash
-   curl -X POST http://localhost:8080/api/v1/oauth/register \
-     -H 'Content-Type: application/json' \
-     -d '{"client_name":"kizaru-mcp","redirect_uris":["http://localhost:8000/oauth/lightdash/callback"],"scope":"read write"}'
-   ```
-
-3. Generate a key and copy it into `FERNET_KEY` in `.env`:
-
-   ```bash
-   uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
-   ```
-
-4. Run `make dev` again. The MCP server is now on http://localhost:8000/mcp.
-
-5. Add it to your MCP client, then sign in as `demo@lightdash.com` with `demo_password!`:
-
-   ```bash
-   claude mcp add --transport http lightdash http://localhost:8000/mcp
-   ```
+```bash
+claude mcp add --transport http lightdash http://localhost:8000/mcp
+```
 
 ### Run it on your Lightdash
 

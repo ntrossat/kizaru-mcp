@@ -1,6 +1,6 @@
 #!/bin/bash
 # Upstream examples/full-jaffle-shop-demo/entrypoint.sh, with three changes:
-# - set up only an empty database, so a restart keeps what was created, such as OAuth clients (make reset empties it)
+# - set up only an empty database, so a restart keeps what was created, such as OAuth clients (make clean deletes it)
 # - reset the Lightdash schemas instead of `rollback --all`, which fails on irreversible migrations
 # - create the enterprise-only organization_homepage_settings table the seed writes to (no license key here)
 set -e

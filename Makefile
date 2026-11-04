@@ -4,9 +4,9 @@ DEMO_DIR := $(LIGHTDASH_DIR)/examples/full-jaffle-shop-demo
 COMPOSE := LIGHTDASH_VERSION=$(LIGHTDASH_VERSION) docker compose -p kizaru-mcp-lightdash \
 	-f $(DEMO_DIR)/docker-compose.yml -f dev/lightdash.compose.yml
 
-.PHONY: dev mcp lightdash wait test lint reset logs stop clean
+.PHONY: dev mcp lightdash wait test lint logs stop clean
 
-dev: lightdash wait mcp
+dev: lightdash wait .env mcp
 
 mcp:
 	uv run kizaru-mcp
@@ -27,19 +27,16 @@ wait:
 		printf "."; sleep 5; \
 	done; echo " timed out, see: make logs"; exit 1
 
+# First run only: registers an OAuth client with the local Lightdash and generates FERNET_KEY.
+.env:
+	uv run python dev/init_env.py
+
 test:
 	uv run pytest
 
 lint:
 	uv run ruff check .
 	uv run ruff format --check .
-
-# Lightdash sets up an empty database when it starts.
-reset:
-	$(COMPOSE) stop lightdash
-	$(COMPOSE) exec -T db psql -U postgres -q -c 'drop schema if exists public, graphile_worker cascade'
-	$(COMPOSE) start lightdash
-	@$(MAKE) --no-print-directory wait
 
 logs:
 	$(COMPOSE) logs -f lightdash
@@ -50,3 +47,4 @@ stop:
 clean:
 	-$(COMPOSE) down -v
 	rm -rf $(LIGHTDASH_DIR)
+	@if head -1 .env 2>/dev/null | grep -q '^# Created by make dev'; then rm .env; fi
