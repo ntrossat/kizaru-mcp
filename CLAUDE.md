@@ -29,7 +29,7 @@ One process built on the official MCP Python SDK (`MCPServer`, Streamable HTTP).
 - `auth/store.py`: encrypted Redis storage and locks. Keys are `kizaru-mcp:{client,transaction,code,access,refresh,grant}:<id>`, token keys are sha256 digests.
 - `lightdash.py`: async `LightdashClient` and `LightdashError`.
 - `tools/common.py`: every tool body runs inside `async with lightdash(provider) as ld:`, which gets the signed-in user's token (refreshing it if needed) and maps Lightdash errors to `ToolError` (401 ends the grant). It also defines the tool annotations (`READ`, `WRITE`, `CREATE`, `DESTRUCTIVE`) and the `Uuid` / `Name` argument types, which must be used for anything interpolated into a Lightdash URL path.
-- `tools/{access,content,schedulers,data}.py`: the tools, each module with a `register` function. Destructive tools take `dry_run` and use the `DESTRUCTIVE` annotation. Every tool is listed in `docs/tools.md` with the Lightdash API it calls.
+- `tools/{access,content,schedulers,data}.py`: the tools, each module with a `register` function. Destructive tools take `dry_run` (default `True`, so they only preview unless called with `dry_run=false`) and use the `DESTRUCTIVE` annotation. Every tool is listed in `docs/tools.md` with the Lightdash API it calls.
 
 ## Configuration
 

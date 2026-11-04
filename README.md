@@ -2,7 +2,13 @@
 
 **Open Source MCP server for self-hosted Lightdash**
 
-**Query your data from any AI assistant** with your Lightdash permissions. And run your instance from the same chat: who has access to what, which content is broken or unused, and which deliveries go out.
+[![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.15+-blue)](pyproject.toml)
+[![MCP](https://img.shields.io/badge/MCP-compatible-green)](https://modelcontextprotocol.io)
+[![CI](https://github.com/ntrossat/kizaru-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/ntrossat/kizaru-mcp/actions/workflows/ci.yml)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+
+Query your data from any AI assistant **with your Lightdash permissions**. And run your instance from the same chat: who has access to what, which content is broken or unused, and which deliveries go out.
 
 Works with Claude, ChatGPT, Claude Code and any MCP client.
 
@@ -12,7 +18,7 @@ Works with Claude, ChatGPT, Claude Code and any MCP client.
 ## Principles
 
 - **Acts as you.** Users sign in with Lightdash OAuth. Every call runs with their own role, so the assistant can never do more than they can.
-- **Safe by default.** Destructive tools take `dry_run` and are marked destructive, so clients ask before running them. Lightdash tokens never leave the server.
+- **Safe by default.** Destructive tools only preview the change unless called with `dry_run=false`, and are marked destructive, so clients ask before running them. Lightdash tokens never leave the server.
 - **Small and focused.** Data queries through the semantic layer, plus the administration, governance and content lifecycle.
 
 ## Features

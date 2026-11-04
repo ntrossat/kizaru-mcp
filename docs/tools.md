@@ -2,7 +2,7 @@
 
 Every tool runs as the signed-in user. A tool fails with a permission message when the user's Lightdash role doesn't allow the call.
 
-Write tools are marked idempotent where repeating them changes nothing. Destructive tools are marked destructive and take `dry_run`, which shows what would change without changing it.
+Write tools are marked idempotent where repeating them changes nothing. Destructive tools are marked destructive and take `dry_run`, on by default, which shows what would change without changing it. Pass `dry_run=false` to apply the change.
 
 ## Read
 

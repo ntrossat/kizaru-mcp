@@ -146,9 +146,9 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
         return f"Changed the user's project role to {role}."
 
     @server.tool(annotations=DESTRUCTIVE)
-    async def revoke_project_access(project_uuid: Uuid, user_uuid: Uuid, dry_run: bool = False) -> dict[str, Any]:
+    async def revoke_project_access(project_uuid: Uuid, user_uuid: Uuid, dry_run: bool = True) -> dict[str, Any]:
         """Remove a user's direct project grant. Access through their organization role or a group remains.
-        Use dry_run to see the grant that would be removed."""
+        dry_run, on by default, shows the grant that would be removed. Pass dry_run=false to remove it."""
         async with lightdash(provider) as ld:
             members = await ld.get(f"/api/v1/projects/{project_uuid}/access")
             member = next((m for m in members if m["userUuid"] == user_uuid), None)
@@ -168,9 +168,9 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
         return "The user is a member of the group."
 
     @server.tool(annotations=DESTRUCTIVE)
-    async def remove_group_member(group_uuid: Uuid, user_uuid: Uuid, dry_run: bool = False) -> dict[str, Any]:
+    async def remove_group_member(group_uuid: Uuid, user_uuid: Uuid, dry_run: bool = True) -> dict[str, Any]:
         """Remove a user from a group, and with it any access the group gave them.
-        Use dry_run to check the membership first."""
+        dry_run, on by default, checks the membership. Pass dry_run=false to remove it."""
         async with lightdash(provider) as ld:
             members = await ld.get(f"/api/v1/groups/{group_uuid}/members")
             member = next((m for m in members if m["userUuid"] == user_uuid), None)

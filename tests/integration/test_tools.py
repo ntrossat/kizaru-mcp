@@ -113,11 +113,11 @@ async def test_project_access_lifecycle(admin, tool, lightdash_admin, project_uu
     ok(await tool(admin, "update_project_access", {**args, "user_uuid": editor_uuid, "role": "viewer"}))
     assert direct_role(ok(await tool(admin, "list_project_access", args))) == "viewer"
 
-    preview = ok(await tool(admin, "revoke_project_access", {**args, "user_uuid": editor_uuid, "dry_run": True}))
+    preview = ok(await tool(admin, "revoke_project_access", {**args, "user_uuid": editor_uuid}))
     assert preview["wouldRemove"]["role"] == "viewer"
     assert direct_role(ok(await tool(admin, "list_project_access", args))) == "viewer"
 
-    ok(await tool(admin, "revoke_project_access", {**args, "user_uuid": editor_uuid}))
+    ok(await tool(admin, "revoke_project_access", {**args, "user_uuid": editor_uuid, "dry_run": False}))
     assert direct_role(ok(await tool(admin, "list_project_access", args))) is None
 
 
@@ -133,8 +133,8 @@ async def test_group_membership(admin, tool, editor_uuid):
     groups = ok(await tool(admin, "list_groups"))
     assert editor_uuid in members()
 
-    assert ok(await tool(admin, "remove_group_member", {**args, "dry_run": True}))["wouldRemove"]["email"] == EDITOR
-    ok(await tool(admin, "remove_group_member", args))
+    assert ok(await tool(admin, "remove_group_member", args))["wouldRemove"]["email"] == EDITOR
+    ok(await tool(admin, "remove_group_member", {**args, "dry_run": False}))
     groups = ok(await tool(admin, "list_groups"))
     assert editor_uuid not in members()
 
@@ -152,12 +152,9 @@ async def test_scheduler_lifecycle(admin, tool, project_uuid, scheduler, lightda
     ok(await tool(admin, "set_scheduler_enabled", {"scheduler_uuid": scheduler, "enabled": False}))
     assert find(ok(await tool(admin, "list_schedulers", {"project_uuid": project_uuid})))["enabled"] is False
 
-    assert (
-        ok(await tool(admin, "delete_scheduler", {"scheduler_uuid": scheduler, "dry_run": True}))["wouldDelete"]["name"]
-        == "renamed"
-    )
+    assert ok(await tool(admin, "delete_scheduler", {"scheduler_uuid": scheduler}))["wouldDelete"]["name"] == "renamed"
     assert lightdash_admin.get(f"/api/v1/schedulers/{scheduler}").status_code == 200
-    ok(await tool(admin, "delete_scheduler", {"scheduler_uuid": scheduler}))
+    ok(await tool(admin, "delete_scheduler", {"scheduler_uuid": scheduler, "dry_run": False}))
     assert lightdash_admin.get(f"/api/v1/schedulers/{scheduler}").status_code == 404
 
 
@@ -179,9 +176,9 @@ async def test_move_and_delete_content(admin, tool, project_uuid, space, lightda
     assert chart_space() == home
 
     delete = {"project_uuid": project_uuid, "content_type": "space", "uuid": space}
-    preview = ok(await tool(admin, "delete_content", {**delete, "dry_run": True}))
+    preview = ok(await tool(admin, "delete_content", delete))
     assert preview["wouldDelete"]["item"]["name"] == "mcp test space"
-    ok(await tool(admin, "delete_content", delete))
+    ok(await tool(admin, "delete_content", {**delete, "dry_run": False}))
     spaces = ok(await tool(admin, "list_spaces", {"project_uuid": project_uuid}))
     assert space not in [s["spaceUuid"] for s in spaces]
 

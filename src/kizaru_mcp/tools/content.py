@@ -120,9 +120,9 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
         return f'Moved {content_type} "{item["name"]}".'
 
     @server.tool(annotations=DESTRUCTIVE)
-    async def delete_content(project_uuid: Uuid, content_type: ContentType, uuid: Uuid, dry_run: bool = False) -> dict[str, Any]:
+    async def delete_content(project_uuid: Uuid, content_type: ContentType, uuid: Uuid, dry_run: bool = True) -> dict[str, Any]:
         """Delete a chart, dashboard or space. A space is deleted with everything in it.
-        Use dry_run to see what would be deleted."""
+        dry_run, on by default, shows what would be deleted. Pass dry_run=false to delete."""
         async with lightdash(provider) as ld:
             item = await _item(ld, project_uuid, content_type, uuid)
             impact: dict[str, Any] = {"item": _summary(item)}

@@ -76,8 +76,8 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
         return _summary(updated)
 
     @server.tool(annotations=DESTRUCTIVE)
-    async def delete_scheduler(scheduler_uuid: Uuid, dry_run: bool = False) -> dict[str, Any]:
-        """Delete a scheduled delivery. Use dry_run to see it first."""
+    async def delete_scheduler(scheduler_uuid: Uuid, dry_run: bool = True) -> dict[str, Any]:
+        """Delete a scheduled delivery. dry_run, on by default, shows it. Pass dry_run=false to delete it."""
         async with lightdash(provider) as ld:
             scheduler = _summary(await ld.get(f"/api/v1/schedulers/{scheduler_uuid}"))
             if dry_run:
