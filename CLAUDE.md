@@ -18,6 +18,7 @@ Kizaru: an MCP server for self-hosted Lightdash (data queries, access, content, 
 - Unit tests use `respx` and `fakeredis`. Integration tests (`tests/integration`) need the local Lightdash from `make dev`, start the server on port 8765, use Redis db 15, and skip themselves when Lightdash is down. They modify the demo data: run `make clean` and `make dev` after an interrupted run.
 - CI runs `uv sync --locked`, ruff and pytest on Python 3.15.
 - `Dockerfile` builds the server image (uv build stage, slim runtime as `nobody`, `HOST=0.0.0.0`). `.github/workflows/docker.yml` pushes it to `ghcr.io/ntrossat/kizaru-mcp` (tags: `pyproject.toml` version and `latest`, amd64 and arm64) on each published release or by hand.
+- `.github/workflows/pypi.yml` builds the package with `uv build` and publishes it to PyPI (`uv publish`, trusted publishing) on each published release.
 - Run `make lint` and `make test` before a PR, and update `docs/` in the same change as the code.
 
 ## Architecture
