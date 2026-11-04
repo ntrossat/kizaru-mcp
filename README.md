@@ -1,7 +1,7 @@
 # Kizaru - Open-source MCP server for Lightdash
 
-[![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.15+-blue)](pyproject.toml)
+[![License](https://img.shields.io/badge/license-MIT-yellow)](https://github.com/ntrossat/kizaru-mcp/blob/main/LICENSE)
+[![Python](https://img.shields.io/badge/python-3.15+-blue)](https://github.com/ntrossat/kizaru-mcp/blob/main/pyproject.toml)
 [![MCP](https://img.shields.io/badge/MCP-compatible-green)](https://modelcontextprotocol.io)
 [![CI](https://github.com/ntrossat/kizaru-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/ntrossat/kizaru-mcp/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
@@ -12,19 +12,22 @@ Query your Lightdash data, and manage its access, content and deliveries, from a
 
 Works with Claude, ChatGPT, Claude Code and any MCP client that supports OAuth.
 
-![Claude Code querying revenue by country and explaining project access through Kizaru](docs/demo.gif)
+![Claude Code querying revenue by country and explaining project access through Kizaru](https://raw.githubusercontent.com/ntrossat/kizaru-mcp/main/docs/demo.gif)
 
 ## Use cases
 
-- ["Create a monthly report of Jaffle Shop."](docs/use-cases.md#monthly-report)
-- ["What was our revenue by country last quarter?"](docs/use-cases.md#revenue-by-country)
-- ["Who can see the Finance space, and why?"](docs/use-cases.md#space-access)
-- ["Which dashboards has nobody opened in 90 days? Move them to an Archive space."](docs/use-cases.md#unused-dashboards)
-- ["List the broken charts and what's wrong with them."](docs/use-cases.md#broken-charts)
-- ["Give alice@example.com editor access to Jaffle Shop."](docs/use-cases.md#project-access)
-- ["Pause the weekly sales delivery."](docs/use-cases.md#deliveries)
+- ["Create a monthly report of Jaffle Shop."](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/use-cases.md#monthly-report)
 
-See [all use cases with screenshots](docs/use-cases.md).
+  ![Claude writing a monthly report of Jaffle Shop with its revenue trend chart](https://raw.githubusercontent.com/ntrossat/kizaru-mcp/main/docs/use-cases/1-monthly-report-trend.jpg)
+
+- ["What was our revenue by country last quarter?"](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/use-cases.md#revenue-by-country)
+- ["Who can see the Finance space, and why?"](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/use-cases.md#space-access)
+- ["Which dashboards has nobody opened in 90 days? Move them to an Archive space."](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/use-cases.md#unused-dashboards)
+- ["List the broken charts and what's wrong with them."](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/use-cases.md#broken-charts)
+- ["Give alice@example.com editor access to Jaffle Shop."](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/use-cases.md#project-access)
+- ["Pause the weekly sales delivery."](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/use-cases.md#deliveries)
+
+See [all use cases with screenshots](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/use-cases.md).
 
 ## Features
 
@@ -33,7 +36,7 @@ See [all use cases with screenshots](docs/use-cases.md).
 - **Content:** find charts and dashboards nobody views, list validation errors, move and delete content.
 - **Deliveries:** list scheduled deliveries with their latest run, pause, edit and delete them.
 
-See [all tools](docs/tools.md).
+See [all tools](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/tools.md).
 
 ## Principles
 
@@ -61,7 +64,7 @@ claude mcp add --transport http lightdash http://localhost:8000/mcp
 
 Needs Python 3.15+, uv, Redis, and a Lightdash instance (tested on 3.93.6). Its OAuth server is part of open-source Lightdash.
 
-1. Register an OAuth client with your Lightdash, as in [Configuration](docs/configuration.md#register-an-oauth-client-with-lightdash).
+1. Register an OAuth client with your Lightdash, as in [Configuration](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/configuration.md#register-an-oauth-client-with-lightdash).
 2. Clone the repository, fill in `.env` (your Lightdash URL, the OAuth client and a `FERNET_KEY`), and start the server:
 
    ```bash
@@ -71,15 +74,15 @@ Needs Python 3.15+, uv, Redis, and a Lightdash instance (tested on 3.93.6). Its 
    uv run kizaru-mcp
    ```
 
-Web clients such as ChatGPT or Claude on the web can't reach `localhost`. Give the server a public HTTPS address, as in [Behind a proxy or a tunnel](docs/configuration.md#behind-a-proxy-or-a-tunnel).
+Web clients such as ChatGPT or Claude on the web can't reach `localhost`. Give the server a public HTTPS address, as in [Behind a proxy or a tunnel](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/configuration.md#behind-a-proxy-or-a-tunnel).
 
 ## Documentation
 
-- [Configuration](docs/configuration.md): run the server and connect clients
-- [Use cases](docs/use-cases.md): example prompts with screenshots
-- [Tools](docs/tools.md): every tool and the Lightdash API it calls
-- [Architecture](docs/architecture.md): sign-in, tokens, storage and errors
-- [Development](docs/development.md): local Lightdash, make targets and tests
+- [Configuration](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/configuration.md): run the server and connect clients
+- [Use cases](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/use-cases.md): example prompts with screenshots
+- [Tools](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/tools.md): every tool and the Lightdash API it calls
+- [Architecture](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/architecture.md): sign-in, tokens, storage and errors
+- [Development](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/development.md): local Lightdash, make targets and tests
 
 ## Contributing
 
@@ -87,8 +90,8 @@ Issues and pull requests are welcome. Run `make lint` and `make test` before ope
 
 ## Security
 
-Report vulnerabilities privately, as in [SECURITY.md](SECURITY.md).
+Report vulnerabilities privately, as in [SECURITY.md](https://github.com/ntrossat/kizaru-mcp/blob/main/SECURITY.md).
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/ntrossat/kizaru-mcp/blob/main/LICENSE)
