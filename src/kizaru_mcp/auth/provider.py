@@ -205,7 +205,7 @@ class LightdashOAuthProvider:
             return _redirect_to_client(transaction, error=error or "access_denied")
         try:
             grant_id, grant = await self._create_grant(transaction, code)
-        except (httpx.HTTPError, ValueError, KeyError):
+        except httpx.HTTPError, ValueError, KeyError:
             return _redirect_to_client(transaction, error="server_error", description="Lightdash sign-in failed")
 
         code = secrets.token_urlsafe(32)

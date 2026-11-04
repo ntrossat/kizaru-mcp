@@ -1,7 +1,7 @@
 """Content lifecycle: unused content, validation errors, moving and deleting content."""
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
 
 from mcp.server.mcpserver import MCPServer
@@ -58,12 +58,12 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
     ) -> list[dict[str, Any]]:
         """Find charts and dashboards nobody has viewed in `unused_days` days, never-viewed first.
         Content created within that window is left out."""
-        cutoff = datetime.now(timezone.utc) - timedelta(days=unused_days)
+        cutoff = datetime.now(UTC) - timedelta(days=unused_days)
         async with lightdash(provider) as ld:
             items = await _content(ld, project_uuid, contentTypes=content_type or ["chart", "dashboard"])
 
         def before_cutoff(value: str | None) -> bool:
-            return value is None or datetime.fromisoformat(value.replace("Z", "+00:00")) < cutoff
+            return value is None or datetime.fromisoformat(value) < cutoff
 
         unused = [i for i in items if before_cutoff(i.get("lastViewedAt")) and before_cutoff(i["createdAt"])]
         unused.sort(key=lambda i: (i.get("lastViewedAt") is not None, i.get("lastViewedAt") or "", i["createdAt"]))

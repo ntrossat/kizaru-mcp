@@ -1,6 +1,8 @@
-# Kizaru - Open Source MCP server for self-hosted Lightdash
+# Kizaru
 
-Query your data from any AI assistant with your Lightdash permissions. And run your instance from the same chat: who has access to what, which content is broken or unused, and which deliveries go out.
+**Open Source MCP server for self-hosted Lightdash**
+
+**Query your data from any AI assistant** with your Lightdash permissions. And run your instance from the same chat: who has access to what, which content is broken or unused, and which deliveries go out.
 
 Works with Claude, ChatGPT, Claude Code and any MCP client.
 
@@ -46,7 +48,7 @@ See [Development](docs/development.md).
 
 ### Run it on your Lightdash
 
-Needs Python 3.10+, uv, Redis, and Lightdash with its OAuth server (open source, tested on 3.93.6).
+Needs Python 3.15+, uv, Redis, and Lightdash with its OAuth server (open source, tested on 3.93.6).
 
 ```bash
 cp .env.example .env   # the Lightdash URL, its OAuth client and a FERNET_KEY

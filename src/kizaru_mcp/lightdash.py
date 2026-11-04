@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Self
 
 import httpx
 
@@ -45,7 +45,7 @@ class LightdashClient:
     async def aclose(self) -> None:
         await self._http.aclose()
 
-    async def __aenter__(self) -> "LightdashClient":
+    async def __aenter__(self) -> Self:
         return self
 
     async def __aexit__(self, *exc: object) -> None:

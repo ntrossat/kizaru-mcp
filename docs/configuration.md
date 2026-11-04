@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- Python 3.10 or later and [uv](https://docs.astral.sh/uv/).
+- Python 3.15 or later and [uv](https://docs.astral.sh/uv/).
 - Redis.
 - A Lightdash instance with its OAuth server. It is part of open-source Lightdash; tested on 3.93.6.
 
