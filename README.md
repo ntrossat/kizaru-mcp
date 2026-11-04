@@ -8,7 +8,7 @@
 [![CI](https://github.com/ntrossat/kizaru-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/ntrossat/kizaru-mcp/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-Query your data from any AI assistant **with your Lightdash permissions**. And run your instance from the same chat: who has access to what, which content is broken or unused, and which deliveries go out.
+Query your data and run your project from any AI assistant **with your Lightdash permissions**.
 
 Works with Claude, ChatGPT, Claude Code and any MCP client.
 
