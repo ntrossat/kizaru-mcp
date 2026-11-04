@@ -5,6 +5,7 @@ the user's Lightdash tokens, encrypted in Redis. Tools call Lightdash with the g
 refreshed under a lock so a rotated refresh token is never used twice.
 """
 
+import asyncio
 import base64
 import hashlib
 import html
@@ -26,7 +27,7 @@ from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, RedirectResponse, Response
 
-from kizaru_mcp.auth.store import Store, digest
+from kizaru_mcp.auth.store import LOCK_TIMEOUT, Store, digest
 from kizaru_mcp.config import Settings
 
 SCOPE = "lightdash"
@@ -36,6 +37,7 @@ CODE_TTL = 5 * 60
 ACCESS_TTL = 60 * 60
 REFRESH_TTL = 14 * 24 * 60 * 60  # Lightdash's refresh-token lifetime
 REFRESH_MARGIN = 60
+REFRESH_TIMEOUT = LOCK_TIMEOUT - 10  # a refresh ends while it still holds the grant's lock
 CLIENT_TTL = 30 * 24 * 60 * 60  # renewed on use: registration is open, so unused clients must expire
 CONSENT_COOKIE = "kizaru_mcp_consent"  # one per transaction, suffixed with its digest
 
@@ -254,7 +256,8 @@ class LightdashOAuthProvider:
             refresh_token=tokens["refresh_token"],
             expires_at=time.time() + tokens.get("expires_in", ACCESS_TTL),
         )
-        await self.store.put("grant", grant_id, grant, REFRESH_TTL)
+        # Kept for REFRESH_TTL once the client exchanges its code (_issue), so an unused sign-in expires soon.
+        await self.store.put("grant", grant_id, grant, TRANSACTION_TTL)
         return grant_id, grant
 
     # Tokens
@@ -351,15 +354,19 @@ class LightdashOAuthProvider:
             if grant.refresh_token != stale or (not force_refresh and grant.expires_at - time.time() > REFRESH_MARGIN):
                 return grant.access_token  # refreshed meanwhile by another request
 
-            response = await self._http.post(
-                "/api/v1/oauth/token",
-                data={
-                    "grant_type": "refresh_token",
-                    "refresh_token": grant.refresh_token,
-                    "client_id": self.settings.lightdash_client_id,
-                    "client_secret": self.settings.lightdash_client_secret,
-                },
-            )
+            try:
+                async with asyncio.timeout(REFRESH_TIMEOUT):
+                    response = await self._http.post(
+                        "/api/v1/oauth/token",
+                        data={
+                            "grant_type": "refresh_token",
+                            "refresh_token": grant.refresh_token,
+                            "client_id": self.settings.lightdash_client_id,
+                            "client_secret": self.settings.lightdash_client_secret,
+                        },
+                    )
+            except TimeoutError:
+                raise httpx.TimeoutException("Lightdash didn't answer the refresh in time") from None
             # Only a refused grant ends the sign-in. Other errors, such as invalid_client, are the server's.
             if response.status_code in (400, 401) and _oauth_error(response) == "invalid_grant":
                 await self._end_grant(grant_id)

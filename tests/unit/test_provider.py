@@ -13,8 +13,11 @@ from mcp.server.mcpserver.exceptions import ToolError
 from mcp.shared.auth import OAuthClientInformationFull
 from starlette.requests import Request
 
+from kizaru_mcp.auth import provider as provider_module
 from kizaru_mcp.auth.provider import (
     CLIENT_TTL,
+    REFRESH_TTL,
+    TRANSACTION_TTL,
     Access,
     Grant,
     LightdashOAuthProvider,
@@ -136,6 +139,48 @@ async def test_tools_map_lightdash_errors(provider):
             async with lightdash(provider) as ld:
                 await ld.get("/api/v1/org")
 
+        # Still refused with a refreshed token: the sign-in has ended.
+        respx.post(TOKEN_URL).mock(
+            return_value=httpx.Response(
+                200, json={"access_token": "ld-access-2", "refresh_token": "ld-refresh-2", "expires_in": 3600}
+            )
+        )
+        respx.get(f"{LIGHTDASH}/api/v1/org").mock(return_value=httpx.Response(401))
+        with pytest.raises(ToolError, match=RECONNECT):
+            async with lightdash(provider) as ld:
+                await ld.get("/api/v1/org")
+        assert await provider.load_access_token(access) is None
+    finally:
+        auth_context_var.reset(reset)
+
+
+@respx.mock
+async def test_token_expiring_during_a_call_is_refreshed(provider):
+    access = await add_grant(provider, 3600)
+    reset = signed_in_as(await provider.load_access_token(access))
+    try:
+        respx.post(TOKEN_URL).mock(
+            return_value=httpx.Response(
+                200, json={"access_token": "ld-access-2", "refresh_token": "ld-refresh-2", "expires_in": 3600}
+            )
+        )
+        org = respx.get(f"{LIGHTDASH}/api/v1/org").mock(
+            side_effect=[httpx.Response(401), httpx.Response(200, json={"results": {"name": "Org"}})]
+        )
+        async with lightdash(provider) as ld:
+            assert await ld.get("/api/v1/org") == {"name": "Org"}
+        assert org.calls[1].request.headers["Authorization"] == "Bearer ld-access-2"
+        assert await provider.load_access_token(access) is not None
+    finally:
+        auth_context_var.reset(reset)
+
+
+@respx.mock
+async def test_refused_refresh_during_a_call_ends_the_sign_in(provider):
+    access = await add_grant(provider, 3600)
+    reset = signed_in_as(await provider.load_access_token(access))
+    try:
+        respx.post(TOKEN_URL).mock(return_value=httpx.Response(400, json={"error": "invalid_grant"}))
         respx.get(f"{LIGHTDASH}/api/v1/org").mock(return_value=httpx.Response(401))
         with pytest.raises(ToolError, match=RECONNECT):
             async with lightdash(provider) as ld:
@@ -241,6 +286,62 @@ async def test_failed_callback_returns_to_the_client(provider):
     response = await provider.lightdash_callback(request)
     assert response.status_code == 302
     assert response.headers["location"].startswith("http://localhost:9999/callback?error=server_error")
+
+
+@respx.mock
+async def test_slow_refresh_gives_up_before_the_lock_expires(provider, monkeypatch):
+    monkeypatch.setattr(provider_module, "REFRESH_TIMEOUT", 0.05)
+    access = await add_grant(provider, 10)
+
+    async def slow_refresh(request):
+        await asyncio.sleep(1)
+        return httpx.Response(200, json={"access_token": "ld-access-2", "refresh_token": "ld-refresh-2", "expires_in": 3600})
+
+    respx.post(TOKEN_URL).mock(side_effect=slow_refresh)
+    with pytest.raises(httpx.TimeoutException):
+        await provider.lightdash_token("grant")
+    assert await provider.load_access_token(access)
+    assert not await provider.store.lock("grant", "grant").locked()
+
+
+@respx.mock
+async def test_grant_lasts_once_its_code_is_exchanged(provider):
+    client = OAuthClientInformationFull(client_id="client", redirect_uris=["http://localhost:9999/callback"])
+    transaction = Transaction(
+        client_id="client",
+        params=AuthorizationParams(
+            state=None,
+            scopes=[],
+            code_challenge="x" * 43,
+            redirect_uri="http://localhost:9999/callback",
+            redirect_uri_provided_explicitly=True,
+        ),
+        verifier="verifier",
+        csrf="csrf",
+        approved=True,
+    )
+    await provider.store.put("transaction", "t", transaction)
+    respx.post(TOKEN_URL).mock(
+        return_value=httpx.Response(200, json={"access_token": "ld-access", "refresh_token": "ld-refresh", "expires_in": 3600})
+    )
+    respx.get(f"{LIGHTDASH}/api/v1/user").mock(return_value=httpx.Response(200, json={"results": {"userUuid": "user"}}))
+    request = Request(
+        {
+            "type": "http",
+            "method": "GET",
+            "path": "/oauth/lightdash/callback",
+            "query_string": b"state=t&code=lightdash-code",
+            "headers": [(b"cookie", f"{_consent_cookie('t')}=csrf".encode())],
+        }
+    )
+    response = await provider.lightdash_callback(request)
+    code = await provider.load_authorization_code(client, response.headers["location"].split("code=")[1])
+    grant_key = f"kizaru-mcp:grant:{code.grant_id}"
+    # A sign-in whose code is never exchanged doesn't keep the Lightdash tokens for long.
+    assert 0 < await provider.store._redis.ttl(grant_key) <= TRANSACTION_TTL
+
+    await provider.exchange_authorization_code(client, code)
+    assert await provider.store._redis.ttl(grant_key) > REFRESH_TTL - 60
 
 
 async def test_tokens_copied_under_another_key_are_refused(provider):

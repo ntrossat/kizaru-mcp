@@ -2,6 +2,7 @@
 
 import asyncio
 from datetime import UTC, datetime, timedelta
+from itertools import count
 from typing import Any, Literal
 
 from mcp.server.mcpserver import MCPServer
@@ -14,18 +15,16 @@ from kizaru_mcp.tools.common import DESTRUCTIVE, READ, WRITE, Uuid, lightdash
 ContentType = Literal["chart", "dashboard", "space"]
 
 PAGE_SIZE = 100
-MAX_PAGES = 50
 VALIDATION_TIMEOUT = 120
 
 
 async def _content(ld: LightdashClient, project_uuid: str, **params: Any) -> list[dict[str, Any]]:
     items: list[dict[str, Any]] = []
-    for page in range(1, MAX_PAGES + 1):
+    for page in count(1):
         results = await ld.get("/api/v2/content", projectUuids=project_uuid, pageSize=PAGE_SIZE, page=page, **params)
         items += results["data"]
         if page >= results["pagination"]["totalPageCount"]:
-            break
-    return items
+            return items
 
 
 async def _item(ld: LightdashClient, project_uuid: str, content_type: ContentType, uuid: str) -> dict[str, Any]:

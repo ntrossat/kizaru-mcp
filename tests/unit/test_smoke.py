@@ -7,6 +7,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from kizaru_mcp.config import Settings
 from kizaru_mcp.lightdash import LightdashClient, LightdashError
 from kizaru_mcp.server import create_server
+from kizaru_mcp.tools.content import _content
 
 
 def test_create_server():
@@ -75,3 +76,15 @@ async def test_client_treats_redirects_as_errors():
         with pytest.raises(LightdashError) as error:
             await client.request("DELETE", "/api/v1/schedulers/s")
     assert error.value.status == 302
+
+
+@respx.mock
+async def test_content_reads_every_page():
+    def page(request):
+        number = int(request.url.params["page"])
+        return httpx.Response(200, json={"results": {"data": [{"uuid": str(number)}], "pagination": {"totalPageCount": 60}}})
+
+    respx.get("http://lightdash.test/api/v2/content").mock(side_effect=page)
+    async with LightdashClient("http://lightdash.test", "token") as client:
+        items = await _content(client, "project")
+    assert [i["uuid"] for i in items] == [str(n) for n in range(1, 61)]

@@ -30,19 +30,19 @@ One Python process: an MCP server built on the official MCP Python SDK (`MCPServ
 - A grant is one sign-in. It holds the user's Lightdash access and refresh tokens.
 - The client gets the server's own tokens: an access token for 1 hour and a refresh token for 14 days. Both point to the grant. Lightdash tokens never leave the server.
 - Refreshing the client's tokens also refreshes the Lightdash ones, so both sign-ins last as long. A tool call refreshes the Lightdash token when it expires within a minute.
-- Refreshes run under a Redis lock per grant, and the new tokens are saved before they are used, so a Lightdash refresh token is never used twice.
+- Refreshes run under a Redis lock per grant, and the new tokens are saved before they are used, so a Lightdash refresh token is never used twice. A refresh gives up after 20 seconds, before the 30-second lock expires.
 - When Lightdash refuses a refresh with `invalid_grant`, the grant ends and the user signs in again. Any other error, such as `invalid_client` from a wrong client secret, or Lightdash being unreachable, keeps the grant and the client's refresh token so it can retry.
 - Revoking a token ends the grant here and revokes it on Lightdash. It waits for a refresh in flight on the same grant, so the refresh can't bring the grant back.
 
 ## Storage
 
-Redis keys are `kizaru-mcp:{client,transaction,code,access,refresh,grant}:<id>`. Token keys are sha256 digests of the tokens, and every value is encrypted with `FERNET_KEY`. Everything expires: client registrations 30 days after their last use, sign-in requests in 10 minutes, codes in 5, tokens and grants with their lifetimes.
+Redis keys are `kizaru-mcp:{client,transaction,code,access,refresh,grant}:<id>`. Token keys are sha256 digests of the tokens, and every value is encrypted with `FERNET_KEY`. Everything expires: client registrations 30 days after their last use, sign-in requests in 10 minutes, codes in 5, tokens and grants with their lifetimes. A grant lasts 10 minutes until its client exchanges the code, so an unfinished sign-in doesn't keep the Lightdash tokens.
 
 ## Errors
 
 | Lightdash returns | The tool says |
 | --- | --- |
-| 401 | The sign-in has ended: reconnect. The grant is ended |
+| 401 | The token is refreshed and the request retried once, as when it expires during a long query. Still 401, or the refresh refused: the sign-in has ended, reconnect. The grant is ended |
 | 403 | Permission denied, with Lightdash's message |
 | 404 | Not found, with Lightdash's message |
 | Any other error | `Lightdash error <status>`, with its message |

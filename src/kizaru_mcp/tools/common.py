@@ -1,4 +1,4 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable
 from contextlib import asynccontextmanager
 from typing import Annotated, Any
 
@@ -39,9 +39,14 @@ async def lightdash(provider: LightdashOAuthProvider) -> AsyncIterator[Lightdash
     except httpx.HTTPError:
         raise ToolError(UNREACHABLE) from None
 
-    async with LightdashClient(provider.settings.lightdash_url, access_token) as client:
+    def refresh() -> Awaitable[str]:
+        return provider.lightdash_token(token.grant_id, force_refresh=True)
+
+    async with LightdashClient(provider.settings.lightdash_url, access_token, refresh) as client:
         try:
             yield client
+        except SignInRequired:
+            raise ToolError(RECONNECT) from None
         except LightdashError as error:
             if error.status == 401:
                 await provider.end_grant(token.grant_id)

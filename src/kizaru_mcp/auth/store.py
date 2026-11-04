@@ -11,6 +11,7 @@ from redis.asyncio.lock import Lock
 M = TypeVar("M", bound=BaseModel)
 
 PREFIX = "kizaru-mcp"
+LOCK_TIMEOUT = 30
 
 
 def digest(token: str) -> str:
@@ -52,4 +53,4 @@ class Store:
         await self._redis.delete(self._key(kind, key))
 
     def lock(self, kind: str, key: str) -> Lock:
-        return self._redis.lock(self._key(f"lock:{kind}", key), timeout=30, blocking_timeout=30)
+        return self._redis.lock(self._key(f"lock:{kind}", key), timeout=LOCK_TIMEOUT, blocking_timeout=LOCK_TIMEOUT)
