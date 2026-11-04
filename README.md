@@ -1,12 +1,17 @@
-# kizaru-mcp
+# Kizaru - Open Source MCP server for self-hosted Lightdash
 
-An MCP server for open-source Lightdash: query your data from any AI assistant, and run the instance: who has access to what, which content is broken or unused, and which deliveries go out. The assistant answers and acts as you, with your Lightdash permissions.
+Query your data from any AI assistant with your Lightdash permissions. And run your instance from the same chat: who has access to what, which content is broken or unused, and which deliveries go out.
+
+Works with Claude, ChatGPT, Claude Code and any MCP client.
+
+![Claude Code querying revenue by country and explaining project access through Kizaru](docs/demo.gif)
+
 
 ## Principles
 
 - **Acts as you.** Users sign in with Lightdash OAuth. Every call runs with their own role, so the assistant can never do more than they can.
 - **Safe by default.** Destructive tools take `dry_run` and are marked destructive, so clients ask before running them. Lightdash tokens never leave the server.
-- **Small and focused.** Querying data through the semantic layer, which the official Lightdash MCP offers only with an Enterprise license, and administration, governance and content lifecycle, which it doesn't cover.
+- **Small and focused.** Data queries through the semantic layer, plus the administration, governance and content lifecycle.
 
 ## Features
 
