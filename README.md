@@ -1,6 +1,6 @@
 # Kizaru
 
-**Open-source MCP server for self-hosted Lightdash**
+**Open-source MCP server for self-hosted Lightdash, with per-user sign-in**
 
 [![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.15+-blue)](pyproject.toml)
