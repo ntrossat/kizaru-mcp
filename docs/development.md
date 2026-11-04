@@ -22,7 +22,7 @@ Fill in `.env` first, as in [Configuration](configuration.md): register the OAut
 | Command | Does |
 | --- | --- |
 | `make dev` | Set up everything, then run the MCP server |
-| `make setup` | Set up everything, without the server |
+| `make mcp` | Run the MCP server only |
 | `make test` | Run the tests |
 | `make lint` | Check the code with Ruff: lint and formatting |
 | `make reset` | Restart Lightdash with a clean database and the sample data |
@@ -50,6 +50,22 @@ The demo comes from the Lightdash repository:
 
 - The first start seeds the data, migrates and loads the sample content. Later starts keep the database, with what was created and the registered OAuth clients. After `make reset` or `make clean`, register the client again, update `.env`, and MCP clients sign in again.
 - The image is `linux/amd64`. On Apple Silicon it runs under emulation and is slower.
+
+## Use your own local Lightdash
+
+`make dev` always starts the demo Lightdash and Redis. To use a Lightdash already running on your machine, skip it:
+
+1. Register an OAuth client with your Lightdash, as in [Configuration](configuration.md), with the redirect URI `http://localhost:8000/oauth/lightdash/callback`.
+2. In `.env`, set `LIGHTDASH_URL` to your Lightdash, such as `http://localhost:3000`, with the client's `LIGHTDASH_CLIENT_ID`, `LIGHTDASH_CLIENT_SECRET` and a `FERNET_KEY`.
+3. Start a Redis at `REDIS_URL`, such as `docker run -d -p 6379:6379 redis:7-alpine`.
+4. Run the server:
+
+```bash
+make mcp
+```
+
+- The demo stack publishes ports 8080 and 6379: running `make dev` alongside your Lightdash clashes if it uses either.
+- The integration tests ignore `.env`: they always target `http://localhost:8080` with the demo users. If your Lightdash is on 8080, `make test` runs them against it and changes its content. Otherwise they skip themselves.
 
 ## Tests
 

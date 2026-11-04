@@ -45,11 +45,11 @@ Copy `.env.example` to `.env` and fill it in.
 | `LIGHTDASH_URL` | No | `http://localhost:8080` | The Lightdash instance |
 | `LIGHTDASH_CLIENT_ID` | Yes | | The OAuth client from the step above |
 | `LIGHTDASH_CLIENT_SECRET` | Yes | | Its secret |
-| `PUBLIC_URL` | No | `http://localhost:8000` | The address clients reach this server at. It is the OAuth issuer, and its host is accepted on incoming requests |
 | `FERNET_KEY` | Yes | | Encrypts everything stored in Redis |
 | `REDIS_URL` | No | `redis://localhost:6379/0` | Where sign-ins, clients and tokens are kept |
 | `HOST` | No | `127.0.0.1` | Address the server listens on |
 | `PORT` | No | `8000` | Port the server listens on |
+| `PUBLIC_URL` | No | `http://localhost:<PORT>` | The address clients reach this server at, as in [Behind a proxy or a tunnel](#behind-a-proxy-or-a-tunnel). It is the OAuth issuer, and its host is accepted on incoming requests |
 
 Generate a `FERNET_KEY`:
 
@@ -68,9 +68,34 @@ uv run kizaru-mcp
 
 The MCP endpoint is `<PUBLIC_URL>/mcp`, over Streamable HTTP.
 
+## Behind a proxy or a tunnel
+
+The server listens on `HOST:PORT`. Clients, and their browsers during sign-in, reach it at `PUBLIC_URL`. Behind a proxy or a tunnel the two differ:
+
+1. Set `PUBLIC_URL` to the address clients use, at the root of its host: `https://mcp.example.com`, not `https://example.com/mcp`.
+2. Add `<PUBLIC_URL>/oauth/lightdash/callback` to the redirect URIs of the Lightdash OAuth client.
+3. Restart the server. Clients connect to `<PUBLIC_URL>/mcp`.
+
+The server accepts requests for `PUBLIC_URL`'s host, and marks its consent cookie `Secure` when `PUBLIC_URL` is HTTPS.
+
+### Reverse proxy
+
+- Serve it over HTTPS, and forward every path to `http://<HOST>:<PORT>`. `HOST` stays `127.0.0.1` when the proxy runs on the same machine.
+- Don't buffer responses: Streamable HTTP can answer with a stream of server-sent events. With nginx, set `proxy_buffering off`.
+
+### Tunnel
+
+To reach a local server from Claude.ai or ChatGPT, which need a public HTTPS address:
+
+```bash
+cloudflared tunnel --url http://localhost:8000
+```
+
+Set `PUBLIC_URL` to the address the tunnel prints, such as `https://abc.trycloudflare.com`, then register its callback with Lightdash and restart, as above. A quick tunnel gets a new address on every start, so repeat these steps each time, or use a named tunnel.
+
 ## Run it publicly
 
-- Serve it over HTTPS behind a reverse proxy, with `PUBLIC_URL` set to the HTTPS address. `HOST` stays `127.0.0.1` when the proxy runs on the same machine.
+- Serve it over HTTPS behind a reverse proxy, as above.
 - Rate-limit `/register`, `/authorize` and `/token` at the proxy. Registration is open, as MCP clients need, and each registration or sign-in request is kept in Redis: registrations 30 days after their last use, sign-in requests 10 minutes.
 - Keep Redis private, and `FERNET_KEY` and `LIGHTDASH_CLIENT_SECRET` out of the repository.
 
@@ -85,4 +110,4 @@ The MCP endpoint is `<PUBLIC_URL>/mcp`, over Streamable HTTP.
 
 On first use, the client opens a consent page on this server that names the client and where it returns to. After **Allow**, Lightdash asks the user to sign in and approve, then the client is connected.
 
-To reach a local server from Claude.ai or ChatGPT, run a tunnel such as `cloudflared tunnel --url http://localhost:8000`, set `PUBLIC_URL` to the tunnel address, and register the tunnel's callback URL with Lightdash as well.
+To connect Claude.ai or ChatGPT to a local server, run a [tunnel](#tunnel).

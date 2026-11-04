@@ -4,12 +4,12 @@ DEMO_DIR := $(LIGHTDASH_DIR)/examples/full-jaffle-shop-demo
 COMPOSE := LIGHTDASH_VERSION=$(LIGHTDASH_VERSION) docker compose -p kizaru-mcp-lightdash \
 	-f $(DEMO_DIR)/docker-compose.yml -f dev/lightdash.compose.yml
 
-.PHONY: dev setup lightdash wait test lint reset logs stop clean
+.PHONY: dev mcp lightdash wait test lint reset logs stop clean
 
-dev: setup
+dev: lightdash wait mcp
+
+mcp:
 	uv run kizaru-mcp
-
-setup: lightdash wait
 
 $(DEMO_DIR):
 	git clone -q --depth 1 --branch $(LIGHTDASH_VERSION) --filter=blob:none --sparse \

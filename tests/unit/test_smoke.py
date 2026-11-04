@@ -36,6 +36,11 @@ def test_missing_settings_stop_the_server():
         Settings(_env_file=None).check()
 
 
+def test_public_url_follows_the_port_unless_set():
+    assert Settings(_env_file=None, port=9000).public_url == "http://localhost:9000"
+    assert Settings(_env_file=None, port=9000, public_url="https://mcp.example.com/").public_url == "https://mcp.example.com"
+
+
 @respx.mock
 async def test_client_sends_bearer_and_unwraps_results():
     route = respx.get("http://lightdash.test/api/v1/user").mock(

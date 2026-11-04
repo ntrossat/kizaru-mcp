@@ -8,15 +8,15 @@ Kizaru: an MCP server for self-hosted Lightdash (data queries, access, content, 
 
 | Command | Does |
 | --- | --- |
-| `make dev` | Start the local Lightdash (Docker, demo data on :8080), then run the server on :8000/mcp |
-| `make setup` | Start the local Lightdash only |
+| `make dev` | Start the local Lightdash (Docker, demo data on :8080), then run the MCP server on :8000/mcp |
+| `make mcp` | Run the MCP server only |
 | `make test` | `uv run pytest` |
 | `make lint` | `ruff check .` and `ruff format --check .` (line length 130) |
 | `make reset` | Clean Lightdash database with the sample data |
 | `make logs` / `make stop` / `make clean` | Follow logs / stop / delete containers, volumes and `.lightdash/` |
 
 - Single test: `uv run pytest tests/unit/test_provider.py::test_name`
-- Unit tests use `respx` and `fakeredis`. Integration tests (`tests/integration`) need the local Lightdash from `make setup`, start the server on port 8765, use Redis db 15, and skip themselves when Lightdash is down. They modify the demo data: run `make reset` after an interrupted run.
+- Unit tests use `respx` and `fakeredis`. Integration tests (`tests/integration`) need the local Lightdash from `make dev`, start the server on port 8765, use Redis db 15, and skip themselves when Lightdash is down. They modify the demo data: run `make reset` after an interrupted run.
 - CI runs `uv sync --locked`, ruff and pytest on Python 3.15.
 - Run `make lint` and `make test` before a PR, and update `docs/` in the same change as the code.
 

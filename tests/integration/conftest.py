@@ -39,7 +39,7 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
     except httpx.HTTPError:
         for item in items:
             if "integration" in str(item.path):
-                item.add_marker(pytest.mark.skip(reason="Lightdash is not running: make setup"))
+                item.add_marker(pytest.mark.skip(reason="Lightdash is not running: make dev"))
 
 
 @pytest.fixture(scope="session")
