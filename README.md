@@ -1,6 +1,4 @@
-# Kizaru
-
-**Open-source MCP server for self-hosted Lightdash, with per-user sign-in**
+# Kizaru - Open-source MCP server for Lightdash
 
 [![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.15+-blue)](pyproject.toml)
@@ -8,9 +6,11 @@
 [![CI](https://github.com/ntrossat/kizaru-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/ntrossat/kizaru-mcp/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-Query your [Lightdash](https://www.lightdash.com) data, and manage its access, content and deliveries, from any AI assistant **with your Lightdash permissions**.
+Kizaru is an open-source [MCP](https://modelcontextprotocol.io) server for self-hosted [Lightdash](https://www.lightdash.com), with per-user sign-in.
 
-Works with Claude, ChatGPT, Claude Code and any [MCP](https://modelcontextprotocol.io) client that supports OAuth.
+Query your Lightdash data, and manage its access, content and deliveries, from any AI assistant **with your Lightdash permissions**.
+
+Works with Claude, ChatGPT, Claude Code and any MCP client that supports OAuth.
 
 > **Early release (v0.1.0).** Expect changes before 1.0.
 
