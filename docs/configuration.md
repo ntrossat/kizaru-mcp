@@ -66,6 +66,12 @@ uv sync
 uv run kizaru-mcp
 ```
 
+Or run the package from PyPI, from the directory with `.env`:
+
+```bash
+uvx kizaru-mcp
+```
+
 Or with Docker, which listens on `0.0.0.0` inside the container:
 
 ```bash

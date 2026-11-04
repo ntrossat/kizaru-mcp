@@ -74,6 +74,12 @@ Needs Python 3.15+, uv, Redis, and a Lightdash instance (tested on 3.93.6). Its 
    uv run kizaru-mcp
    ```
 
+   Or run the package from PyPI, from the directory with `.env`:
+
+   ```bash
+   uvx kizaru-mcp
+   ```
+
    Or run the Docker image instead, as in [Run](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/configuration.md#run):
 
    ```bash
