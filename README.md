@@ -1,6 +1,6 @@
 # Kizaru
 
-**Open Source MCP server for self-hosted Lightdash**
+**Open-source MCP server for self-hosted Lightdash**
 
 [![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.15+-blue)](pyproject.toml)
@@ -8,18 +8,20 @@
 [![CI](https://github.com/ntrossat/kizaru-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/ntrossat/kizaru-mcp/actions/workflows/ci.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-Query your data and run your project from any AI assistant **with your Lightdash permissions**.
+Query your [Lightdash](https://www.lightdash.com) data, and manage its access, content and deliveries, from any AI assistant **with your Lightdash permissions**.
 
-Works with Claude, ChatGPT, Claude Code and any MCP client.
+Works with Claude, ChatGPT, Claude Code and any [MCP](https://modelcontextprotocol.io) client that supports OAuth.
+
+> **Early release (v0.1.0).** Expect changes before 1.0.
 
 ![Claude Code querying revenue by country and explaining project access through Kizaru](docs/demo.gif)
 
+## What you can ask
 
-## Principles
-
-- **Acts as you.** Users sign in with Lightdash OAuth. Every call runs with their own role, so the assistant can never do more than they can.
-- **Safe by default.** Destructive tools only preview the change unless called with `dry_run=false`, and are marked destructive, so clients ask before running them. Lightdash tokens never leave the server.
-- **Small and focused.** Data queries through the semantic layer, plus the administration, governance and content lifecycle.
+- "What was our revenue by country last quarter?"
+- "Who can see the Finance space, and why?"
+- "Which dashboards has nobody opened in 90 days?"
+- "Pause the weekly sales delivery."
 
 ## Features
 
@@ -30,39 +32,63 @@ Works with Claude, ChatGPT, Claude Code and any MCP client.
 
 See [all tools](docs/tools.md).
 
+## Principles
+
+- **Acts as you.** Users sign in with Lightdash. Every call runs with their own role, so the assistant can never do more than they can.
+- **Safe by default.** Deletions only preview what they would remove until confirmed, and your client asks before running them.
+- **Private tokens.** Lightdash tokens never leave the server.
+
 ## Quick start
 
 ### Try it on a local Lightdash
 
 Needs Docker and [uv](https://docs.astral.sh/uv/).
 
-```bash
-git clone https://github.com/ntrossat/kizaru-mcp && cd kizaru-mcp
-cp .env.example .env   # an OAuth client registered with the local Lightdash and a FERNET_KEY
-make dev
-```
+1. Clone the repository and start Lightdash with demo data on http://localhost:8080. The MCP server stops at first, asking for its settings.
 
-This starts Lightdash with demo data on http://localhost:8080 and runs the MCP server on http://localhost:8000/mcp. Register the OAuth client once Lightdash is up, as in [Configuration](docs/configuration.md), fill in `.env`, then run `make dev` again.
+   ```bash
+   git clone https://github.com/ntrossat/kizaru-mcp && cd kizaru-mcp
+   cp .env.example .env
+   make dev
+   ```
 
-Add `http://localhost:8000/mcp` to your MCP client, then sign in as `demo@lightdash.com` with `demo_password!`:
+2. Register an OAuth client with the local Lightdash, and copy its `client_id` and `client_secret` into `LIGHTDASH_CLIENT_ID` and `LIGHTDASH_CLIENT_SECRET` in `.env`:
 
-```bash
-claude mcp add --transport http lightdash http://localhost:8000/mcp
-```
+   ```bash
+   curl -X POST http://localhost:8080/api/v1/oauth/register \
+     -H 'Content-Type: application/json' \
+     -d '{"client_name":"kizaru-mcp","redirect_uris":["http://localhost:8000/oauth/lightdash/callback"],"scope":"read write"}'
+   ```
 
-See [Development](docs/development.md).
+3. Generate a key and copy it into `FERNET_KEY` in `.env`:
+
+   ```bash
+   uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+   ```
+
+4. Run `make dev` again. The MCP server is now on http://localhost:8000/mcp.
+
+5. Add it to your MCP client, then sign in as `demo@lightdash.com` with `demo_password!`:
+
+   ```bash
+   claude mcp add --transport http lightdash http://localhost:8000/mcp
+   ```
 
 ### Run it on your Lightdash
 
-Needs Python 3.15+, uv, Redis, and Lightdash with its OAuth server (open source, tested on 3.93.6).
+Needs Python 3.15+, uv, Redis, and a Lightdash instance (tested on 3.93.6). Its OAuth server is part of open-source Lightdash.
 
-```bash
-cp .env.example .env   # the Lightdash URL, its OAuth client and a FERNET_KEY
-uv sync
-uv run kizaru-mcp
-```
+1. Register an OAuth client with your Lightdash, as in [Configuration](docs/configuration.md#register-an-oauth-client-with-lightdash).
+2. Clone the repository, fill in `.env` (your Lightdash URL, the OAuth client and a `FERNET_KEY`), and start the server:
 
-See [Configuration](docs/configuration.md).
+   ```bash
+   git clone https://github.com/ntrossat/kizaru-mcp && cd kizaru-mcp
+   cp .env.example .env
+   uv sync
+   uv run kizaru-mcp
+   ```
+
+Web clients such as ChatGPT or Claude on the web can't reach `localhost`. Give the server a public HTTPS address, as in [Behind a proxy or a tunnel](docs/configuration.md#behind-a-proxy-or-a-tunnel).
 
 ## Documentation
 
