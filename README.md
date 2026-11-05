@@ -14,6 +14,8 @@ Query your Lightdash data and manage its dashboards, access and deliveries from 
 
 Works with Claude, ChatGPT, Claude Code and any MCP client that supports OAuth.
 
+> Can you create a monthly report of Jaffle Shop?
+
 ![Claude Cowork building a Jaffle Shop revenue and orders report with charts through Kizaru](https://raw.githubusercontent.com/ntrossat/kizaru-mcp/main/docs/demo.gif)
 
 ## Features
