@@ -82,6 +82,12 @@ Inside the container, `localhost` is the container itself. Point `REDIS_URL` at 
 
 The MCP endpoint is `<PUBLIC_URL>/mcp`, over Streamable HTTP.
 
+MCP clients keep a stream open to the server. On stop, the server gives them 3 seconds, then closes them.
+
+`GET /health` answers 200 when the server can reach Redis, and 503 when it can't. The Docker image uses it as its health check. Lightdash being down doesn't make the server unhealthy: tools say so instead.
+
+The server logs every tool call, with the user, the tool and its arguments, as in [Logs](architecture.md#logs).
+
 ## Behind a proxy or a tunnel
 
 The server listens on `HOST:PORT`. Clients, and their browsers during sign-in, reach it at `PUBLIC_URL`. Behind a proxy or a tunnel the two differ:

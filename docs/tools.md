@@ -15,6 +15,8 @@ Write tools are marked idempotent where repeating them changes nothing. Destruct
 | `list_project_access` | `project_uuid` | Each user's effective role, their direct grant, and the groups with access | `/org/users?projectUuid=`, `/projects/{p}/access`, `/projects/{p}/groupAccesses` |
 | `list_spaces` | `project_uuid` | Spaces, nested ones included, with content counts | `/projects/{p}/spaces` |
 | `list_space_access` | `project_uuid`, `space_uuid` | Who can access a space and why: direct, or inherited | `/projects/{p}/spaces/{s}` |
+| `search_content` | `project_uuid`, `search`, `content_type` | Charts and dashboards matching the search, or all of them, with space, views and last update | `/api/v2/content` |
+| `get_dashboard` | `dashboard_uuid` | A dashboard's filters and tiles in layout order: charts with their UUID and kind, and text | `/dashboards/{d}` |
 | `find_unused_content` | `project_uuid`, `unused_days` (90), `content_type` | Charts and dashboards not viewed in that many days, never-viewed first. Content created within the window is left out | `/api/v2/content` |
 | `list_validation_errors` | `project_uuid`, `revalidate` | Broken charts and dashboards from the last validation run, or a fresh one | `/projects/{p}/validate` |
 | `list_schedulers` | `project_uuid`, `search` | Scheduled deliveries with schedule, owner, recipients and latest run | `/schedulers/{p}/list` |
@@ -25,7 +27,8 @@ Write tools are marked idempotent where repeating them changes nothing. Destruct
 | --- | --- | --- | --- |
 | `list_explores` | `project_uuid` | Explores with label, group and description, and errors when they don't compile | `/projects/{p}/explores` |
 | `get_explore` | `project_uuid`, `explore` | Visible dimensions and metrics, joined tables included, with field ID, label, type, table and description | `/projects/{p}/explores/{e}` |
-| `run_query` | `project_uuid`, `explore`, `dimensions`, `metrics`, `filters`, `sorts`, `limit` (500) | Column labels and rows of raw values, at most 2500 | `POST /api/v2/projects/{p}/query/metric-query`, then `/api/v2/projects/{p}/query/{q}` |
+| `run_query` | `project_uuid`, `explore`, `dimensions`, `metrics`, `filters`, `sorts`, `limit` (500) | Column labels, rows of raw values (at most 2500), and `truncated` when more rows match | `POST /api/v2/projects/{p}/query/metric-query`, then `/api/v2/projects/{p}/query/{q}` |
+| `run_chart` | `project_uuid`, `chart_uuid`, `dashboard_uuid` | A saved chart's results as saved, with the dashboard's filters when `dashboard_uuid` is given. Same shape as `run_query` | `POST /api/v2/projects/{p}/query/chart` or `/query/dashboard-chart`, then `/api/v2/projects/{p}/query/{q}` |
 
 A filter is `{field_id, operator, values, settings}`. Filters are combined with AND; a filter on a metric applies after aggregation. Date filters take `settings`, such as `inThePast` with `values: [30]` and `settings: {"unitOfTime": "days"}`.
 
@@ -48,7 +51,8 @@ Project roles are `viewer`, `interactive_viewer`, `editor`, `developer` and `adm
 
 ## Things to know
 
-- `run_query` needs the Interactive Viewer role or above. Viewers only see saved charts, so Lightdash refuses their queries.
+- `run_query` needs the Interactive Viewer role or above. Viewers only see saved charts, so Lightdash refuses their queries: they use `run_chart`.
+- `run_query` asks Lightdash for one row more than `limit`, so `truncated` is exact. `run_chart` keeps the chart's saved row limit, so `truncated` only says whether rows were cut at 2500.
 - Raw values are what the warehouse returns: Postgres counts and other big integers come as strings.
 - A query that runs longer than 120 seconds is cancelled.
 

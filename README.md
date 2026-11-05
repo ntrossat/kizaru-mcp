@@ -31,7 +31,7 @@ See [all use cases with screenshots](https://github.com/ntrossat/kizaru-mcp/blob
 
 ## Features
 
-- **Data:** list explores and their dimensions and metrics, and run queries with filters, sorts and a row limit.
+- **Data:** find charts and dashboards and read their results, list explores and their dimensions and metrics, and run queries with filters, sorts and a row limit.
 - **Access:** list users, groups and roles. See who can reach a project or a space and why. Grant, change and revoke project access, and manage group membership.
 - **Content:** find charts and dashboards nobody views, list validation errors, move and delete content.
 - **Deliveries:** list scheduled deliveries with their latest run, pause, edit and delete them.

@@ -92,7 +92,8 @@ class LightdashOAuthProvider:
     def __init__(self, settings: Settings, store: Store) -> None:
         self.settings = settings
         self.store = store
-        self._http = httpx.AsyncClient(base_url=settings.lightdash_url, timeout=30)
+        # Shared with the tools' Lightdash clients, which set their own timeout.
+        self.http = httpx.AsyncClient(base_url=settings.lightdash_url, timeout=30)
 
     # Client registration
 
@@ -233,7 +234,7 @@ class LightdashOAuthProvider:
         return RedirectResponse(construct_redirect_uri(str(params.redirect_uri), code=code, state=params.state), 302)
 
     async def _create_grant(self, transaction: Transaction, code: str) -> tuple[str, Grant]:
-        response = await self._http.post(
+        response = await self.http.post(
             "/api/v1/oauth/token",
             data={
                 "grant_type": "authorization_code",
@@ -246,7 +247,7 @@ class LightdashOAuthProvider:
         )
         response.raise_for_status()
         tokens = response.json()
-        user = await self._http.get("/api/v1/user", headers={"Authorization": f"Bearer {tokens['access_token']}"})
+        user = await self.http.get("/api/v1/user", headers={"Authorization": f"Bearer {tokens['access_token']}"})
         user.raise_for_status()
 
         grant_id = secrets.token_urlsafe(16)
@@ -357,7 +358,7 @@ class LightdashOAuthProvider:
 
             try:
                 async with asyncio.timeout(REFRESH_TIMEOUT):
-                    response = await self._http.post(
+                    response = await self.http.post(
                         "/api/v1/oauth/token",
                         data={
                             "grant_type": "refresh_token",
@@ -387,7 +388,7 @@ class LightdashOAuthProvider:
             grant = await self._end_grant(grant_id)
         if grant and revoke_upstream:
             try:
-                await self._http.post("/api/v1/oauth/revoke", data={"token": grant.refresh_token})
+                await self.http.post("/api/v1/oauth/revoke", data={"token": grant.refresh_token})
             except httpx.HTTPError:
                 pass  # this server's tokens are gone either way
 

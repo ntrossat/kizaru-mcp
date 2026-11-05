@@ -52,5 +52,8 @@ class Store:
     async def delete(self, kind: str, key: str) -> None:
         await self._redis.delete(self._key(kind, key))
 
+    async def ping(self) -> None:
+        await self._redis.ping()
+
     def lock(self, kind: str, key: str) -> Lock:
         return self._redis.lock(self._key(f"lock:{kind}", key), timeout=LOCK_TIMEOUT, blocking_timeout=LOCK_TIMEOUT)

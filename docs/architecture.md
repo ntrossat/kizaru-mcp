@@ -6,16 +6,16 @@ One Python process: an MCP server built on the official MCP Python SDK (`MCPServ
 
 | Module | Owns |
 | --- | --- |
-| `server.py` | Builds the server: auth settings, consent and callback routes, tools, allowed hosts |
+| `server.py` | Builds the server: auth settings, consent, callback and health routes, tools, the audit log, allowed hosts |
 | `config.py` | Settings from the environment |
 | `auth/provider.py` | The OAuth provider: clients, consent page, Lightdash callback, codes and tokens, upstream refresh |
 | `auth/store.py` | Encrypted Redis storage and locks |
-| `lightdash.py` | The async Lightdash API client and its errors |
+| `lightdash.py` | The async Lightdash API client and its errors. Every user's client shares the provider's HTTP client and its connections |
 | `tools/common.py` | A Lightdash client for the signed-in user, error mapping, tool annotations |
 | `tools/access.py` | Users, groups, roles, project and space access |
-| `tools/content.py` | Unused content, validation errors, moving and deleting content |
+| `tools/content.py` | Finding charts and dashboards, reading dashboards, unused content, validation errors, moving and deleting content |
 | `tools/schedulers.py` | Scheduled deliveries |
-| `tools/data.py` | Explores, fields and metric queries |
+| `tools/data.py` | Explores, fields, metric queries and saved charts |
 
 ## Sign-in
 
@@ -47,6 +47,14 @@ Redis keys are `kizaru-mcp:{client,transaction,code,access,refresh,grant}:<id>`.
 | 404 | Not found, with Lightdash's message |
 | Any other error | `Lightdash error <status>`, with its message |
 | No response | Lightdash can't be reached: try again |
+
+## Logs
+
+Every tool call is logged at INFO on the `kizaru_mcp.audit` logger: the user's Lightdash UUID, the tool, its arguments, and whether it failed. The SDK also logs each tool error's message, and the traceback of unexpected exceptions.
+
+```
+user=b264d83a-9000-426a-85ec-3f9c20f368ce tool=revoke_project_access arguments={"project_uuid": "3675b69e-...", "user_uuid": "...", "dry_run": false} error=False
+```
 
 ## Allowed hosts
 

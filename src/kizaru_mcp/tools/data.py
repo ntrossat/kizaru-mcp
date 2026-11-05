@@ -1,4 +1,4 @@
-"""Data: explores, their fields, and metric queries on the semantic layer."""
+"""Data: explores, their fields, metric queries on the semantic layer, and saved charts."""
 
 import asyncio
 import uuid
@@ -86,6 +86,32 @@ def _filter_group(filters: list[Filter]) -> dict[str, Any] | None:
     return {"id": str(uuid.uuid4()), "and": rules}
 
 
+async def _run(ld: LightdashClient, project_uuid: str, endpoint: str, body: dict[str, Any], page_size: int) -> dict[str, Any]:
+    """Start a Lightdash query, wait for it, and return its first page of results."""
+    started = await ld.request("POST", f"/api/v2/projects/{project_uuid}/query/{endpoint}", json=body | {"context": "api"})
+    path = f"/api/v2/projects/{project_uuid}/query/{started['queryUuid']}"
+    for _ in range(QUERY_TIMEOUT * 2):
+        results = await ld.get(path, pageSize=page_size)
+        if results["status"] not in ("pending", "queued", "executing"):
+            break
+        await asyncio.sleep(0.5)
+    else:
+        await ld.request("POST", f"{path}/cancel")
+        raise ToolError(f"The query took more than {QUERY_TIMEOUT} seconds and was cancelled.")
+    if results["status"] != "ready":
+        raise ToolError(f"The query failed ({results['status']}): {results.get('error')}")
+    return results
+
+
+def _table(results: dict[str, Any]) -> dict[str, Any]:
+    rows = [{fid: cell["value"]["raw"] for fid, cell in row.items()} for row in results["rows"]]
+    return {
+        "columns": {fid: column.get("label") for fid, column in results["columns"].items()},
+        "rows": rows,
+        "truncated": results["totalResults"] > len(rows),
+    }
+
+
 def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
     @server.tool(annotations=READ)
     async def list_explores(project_uuid: Uuid) -> list[dict[str, Any]]:
@@ -130,7 +156,8 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
     ) -> dict[str, Any]:
         """Query an explore by field ID: group by the dimensions, aggregate the metrics, all filters combined with AND.
         A filter on a metric applies after aggregation. Date filters such as inThePast take values [n] and
-        settings {"unitOfTime": "days"}; inBetween takes two values. Returns up to `limit` rows, at most 2500."""
+        settings {"unitOfTime": "days"}; inBetween takes two values. Returns up to `limit` rows, at most 2500;
+        truncated is true when more rows match."""
         dimensions, metrics, filters, sorts = dimensions or [], metrics or [], filters or [], sorts or []
         if not dimensions and not metrics:
             raise ToolError("Give at least one dimension or metric.")
@@ -144,6 +171,7 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
             ]
             if unknown:
                 raise ToolError(f"Unknown fields in {explore}: {', '.join(unknown)}. See get_explore.")
+            rows = max(1, min(limit, MAX_ROWS))
             query = {
                 "exploreName": explore,
                 "dimensions": dimensions,
@@ -157,24 +185,32 @@ def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
                     if group
                 },
                 "sorts": [{"fieldId": s.field_id, "descending": s.descending} for s in sorts],
-                "limit": max(1, min(limit, MAX_ROWS)),
+                # One row more than returned: Lightdash counts it, so truncated is exact.
+                "limit": rows + 1,
                 "tableCalculations": [],
             }
-            started = await ld.request(
-                "POST", f"/api/v2/projects/{project_uuid}/query/metric-query", json={"query": query, "context": "api"}
-            )
-            path = f"/api/v2/projects/{project_uuid}/query/{started['queryUuid']}"
-            for _ in range(QUERY_TIMEOUT * 2):
-                results = await ld.get(path, pageSize=query["limit"])
-                if results["status"] not in ("pending", "queued", "executing"):
-                    break
-                await asyncio.sleep(0.5)
+            results = await _run(ld, project_uuid, "metric-query", {"query": query}, rows)
+        return _table(results)
+
+    @server.tool(annotations=READ)
+    async def run_chart(project_uuid: Uuid, chart_uuid: Uuid, dashboard_uuid: Uuid | None = None) -> dict[str, Any]:
+        """Run a saved chart as it is saved: its fields, filters, sorts and row limit. Give dashboard_uuid to apply
+        that dashboard's filters too, as people see it on the dashboard. Returns at most 2500 rows;
+        truncated is true when there are more."""
+        async with lightdash(provider) as ld:
+            if dashboard_uuid is None:
+                results = await _run(ld, project_uuid, "chart", {"chartUuid": chart_uuid}, MAX_ROWS)
             else:
-                await ld.request("POST", f"{path}/cancel")
-                raise ToolError(f"The query took more than {QUERY_TIMEOUT} seconds and was cancelled.")
-        if results["status"] != "ready":
-            raise ToolError(f"The query failed ({results['status']}): {results.get('error')}")
-        return {
-            "columns": {fid: column.get("label") for fid, column in results["columns"].items()},
-            "rows": [{fid: cell["value"]["raw"] for fid, cell in row.items()} for row in results["rows"]],
-        }
+                dashboard = await ld.get(f"/api/v1/dashboards/{dashboard_uuid}")
+                tile = next((t for t in dashboard["tiles"] if t["properties"].get("savedChartUuid") == chart_uuid), None)
+                if tile is None:
+                    raise ToolError("This chart is not on the dashboard. See get_dashboard.")
+                body = {
+                    "chartUuid": chart_uuid,
+                    "tileUuid": tile["uuid"],
+                    "dashboardUuid": dashboard_uuid,
+                    "dashboardFilters": dashboard["filters"],
+                    "dashboardSorts": [],
+                }
+                results = await _run(ld, project_uuid, "dashboard-chart", body, MAX_ROWS)
+        return _table(results)

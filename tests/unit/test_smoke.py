@@ -2,7 +2,9 @@ import httpx
 import pytest
 import respx
 from cryptography.fernet import Fernet
+from fakeredis import FakeAsyncRedis
 from mcp.server.mcpserver.exceptions import ToolError
+from redis.asyncio import Redis
 
 from kizaru_mcp.config import Settings
 from kizaru_mcp.lightdash import LightdashClient, LightdashError
@@ -47,7 +49,8 @@ async def test_client_sends_bearer_and_unwraps_results():
     route = respx.get("http://lightdash.test/api/v1/user").mock(
         return_value=httpx.Response(200, json={"status": "ok", "results": {"email": "demo@lightdash.com"}})
     )
-    async with LightdashClient("http://lightdash.test", "token") as client:
+    async with httpx.AsyncClient(base_url="http://lightdash.test") as http:
+        client = LightdashClient(http, "token")
         assert await client.request("GET", "/api/v1/user") == {"email": "demo@lightdash.com"}
     assert route.calls[0].request.headers["Authorization"] == "Bearer token"
 
@@ -60,7 +63,8 @@ async def test_client_handles_empty_bodies_and_errors():
             403, json={"status": "error", "error": {"statusCode": 403, "name": "ForbiddenError", "message": "Not allowed"}}
         )
     )
-    async with LightdashClient("http://lightdash.test", "token") as client:
+    async with httpx.AsyncClient(base_url="http://lightdash.test") as http:
+        client = LightdashClient(http, "token")
         assert await client.request("PUT", "/api/v1/groups/g/members/u") is None
         with pytest.raises(LightdashError) as error:
             await client.get("/api/v2/orgs/o/roles")
@@ -72,7 +76,8 @@ async def test_client_treats_redirects_as_errors():
     respx.delete("http://lightdash.test/api/v1/schedulers/s").mock(
         return_value=httpx.Response(302, headers={"Location": "/login"})
     )
-    async with LightdashClient("http://lightdash.test", "token") as client:
+    async with httpx.AsyncClient(base_url="http://lightdash.test") as http:
+        client = LightdashClient(http, "token")
         with pytest.raises(LightdashError) as error:
             await client.request("DELETE", "/api/v1/schedulers/s")
     assert error.value.status == 302
@@ -85,6 +90,17 @@ async def test_content_reads_every_page():
         return httpx.Response(200, json={"results": {"data": [{"uuid": str(number)}], "pagination": {"totalPageCount": 60}}})
 
     respx.get("http://lightdash.test/api/v2/content").mock(side_effect=page)
-    async with LightdashClient("http://lightdash.test", "token") as client:
+    async with httpx.AsyncClient(base_url="http://lightdash.test") as http:
+        client = LightdashClient(http, "token")
         items = await _content(client, "project")
     assert [i["uuid"] for i in items] == [str(n) for n in range(1, 61)]
+
+
+async def test_health_follows_redis():
+    settings = Settings(
+        _env_file=None, lightdash_client_id="id", lightdash_client_secret="secret", fernet_key=Fernet.generate_key().decode()
+    )
+    for redis, status in [(FakeAsyncRedis(), 200), (Redis.from_url("redis://localhost:1"), 503)]:
+        app = create_server(settings, redis).streamable_http_app()
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app), base_url="http://localhost") as client:
+            assert (await client.get("/health")).status_code == status

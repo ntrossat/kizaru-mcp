@@ -42,22 +42,21 @@ async def lightdash(provider: LightdashOAuthProvider) -> AsyncIterator[Lightdash
     def refresh() -> Awaitable[str]:
         return provider.lightdash_token(token.grant_id, force_refresh=True)
 
-    async with LightdashClient(provider.settings.lightdash_url, access_token, refresh) as client:
-        try:
-            yield client
-        except SignInRequired:
+    try:
+        yield LightdashClient(provider.http, access_token, refresh)
+    except SignInRequired:
+        raise ToolError(RECONNECT) from None
+    except LightdashError as error:
+        if error.status == 401:
+            await provider.end_grant(token.grant_id)
             raise ToolError(RECONNECT) from None
-        except LightdashError as error:
-            if error.status == 401:
-                await provider.end_grant(token.grant_id)
-                raise ToolError(RECONNECT) from None
-            if error.status == 403:
-                raise ToolError(f"Permission denied: your Lightdash role doesn't allow this. {error.message}") from None
-            if error.status == 404:
-                raise ToolError(f"Not found: {error.message}") from None
-            raise ToolError(f"Lightdash error {error.status}: {error.message}") from None
-        except httpx.HTTPError:
-            raise ToolError(UNREACHABLE) from None
+        if error.status == 403:
+            raise ToolError(f"Permission denied: your Lightdash role doesn't allow this. {error.message}") from None
+        if error.status == 404:
+            raise ToolError(f"Not found: {error.message}") from None
+        raise ToolError(f"Lightdash error {error.status}: {error.message}") from None
+    except httpx.HTTPError:
+        raise ToolError(UNREACHABLE) from None
 
 
 def pick(item: dict[str, Any], *keys: str) -> dict[str, Any]:

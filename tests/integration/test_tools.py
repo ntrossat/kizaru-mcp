@@ -1,5 +1,6 @@
 """Every tool against the local Lightdash, as the admin and as the viewer."""
 
+import logging
 from typing import Any
 
 import httpx
@@ -213,3 +214,75 @@ async def test_data_tools(admin, viewer, tool, project_uuid):
     assert "Permission denied" in denied(await tool(viewer, "run_query", query))  # viewers only see saved charts
     unknown = denied(await tool(admin, "run_query", {**args, "explore": "orders", "metrics": ["orders_nope"]}))
     assert "Unknown fields in orders: orders_nope" in unknown
+    statuses = {**args, "explore": "orders", "dimensions": ["orders_status"]}
+    assert ok(await tool(admin, "run_query", {**statuses, "limit": 1}))["truncated"] is True
+    assert ok(await tool(admin, "run_query", {**statuses, "limit": 2500}))["truncated"] is False
+
+
+@pytest.fixture
+def filtered_dashboard(lightdash_admin: httpx.Client, project_uuid: str):
+    """A dashboard showing revenue per payment method, filtered to credit cards."""
+    charts = lightdash_admin.get(
+        "/api/v2/content",
+        params={"projectUuids": project_uuid, "contentTypes": "chart", "search": "per payment method"},
+    ).json()["results"]["data"]
+    chart = next(c for c in charts if c["name"] == "How much revenue do we have per payment method?")
+    created = lightdash_admin.post(
+        f"/api/v1/projects/{project_uuid}/dashboards",
+        json={
+            "name": "mcp test dashboard",
+            "spaceUuid": chart["space"]["uuid"],
+            "tabs": [],
+            "tiles": [{"type": "saved_chart", "x": 0, "y": 0, "h": 9, "w": 12, "properties": {"savedChartUuid": chart["uuid"]}}],
+            "filters": {
+                "dimensions": [
+                    {
+                        "id": "6b1c4b4e-1111-4b4e-8b4e-111111111111",
+                        "target": {"fieldId": "payments_payment_method", "tableName": "payments"},
+                        "operator": "equals",
+                        "values": ["credit_card"],
+                    }
+                ],
+                "metrics": [],
+                "tableCalculations": [],
+            },
+        },
+    )
+    uuid = created.json()["results"]["uuid"]
+    yield uuid, chart["uuid"]
+    lightdash_admin.delete(f"/api/v1/dashboards/{uuid}")
+
+
+async def test_saved_content_tools(viewer, tool, project_uuid, filtered_dashboard):
+    args = {"project_uuid": project_uuid}
+    charts = ok(await tool(viewer, "search_content", {**args, "search": "revenue", "content_type": "chart"}))
+    assert charts and all(c["contentType"] == "chart" for c in charts)
+    assert len(charts) < len(ok(await tool(viewer, "search_content", args)))
+
+    dashboard_uuid, chart_uuid = filtered_dashboard
+    assert dashboard_uuid in [d["uuid"] for d in ok(await tool(viewer, "search_content", {**args, "content_type": "dashboard"}))]
+    dashboard = ok(await tool(viewer, "get_dashboard", {"dashboard_uuid": dashboard_uuid}))
+    assert dashboard["projectUuid"] == project_uuid
+    assert dashboard["filters"] == [
+        {"fieldId": "payments_payment_method", "operator": "equals", "values": ["credit_card"], "disabled": False}
+    ]
+    assert [t["chartUuid"] for t in dashboard["tiles"]] == [chart_uuid]
+
+    alone = ok(await tool(viewer, "run_chart", {**args, "chart_uuid": chart_uuid}))  # viewers can run saved charts
+    on_dashboard = ok(await tool(viewer, "run_chart", {**args, "chart_uuid": chart_uuid, "dashboard_uuid": dashboard_uuid}))
+    assert len(alone["rows"]) > 1 and alone["truncated"] is False
+    assert [r["payments_payment_method"] for r in on_dashboard["rows"]] == ["credit_card"]
+    other = "00000000-0000-4000-8000-000000000000"
+    assert "not on the dashboard" in denied(
+        await tool(viewer, "run_chart", {**args, "chart_uuid": other, "dashboard_uuid": dashboard_uuid})
+    )
+
+
+async def test_tool_calls_are_logged(admin, tool, project_uuid, caplog):
+    caplog.set_level(logging.INFO, logger="kizaru_mcp.audit")
+    ok(await tool(admin, "list_spaces", {"project_uuid": project_uuid}))
+    denied(await tool(admin, "list_spaces", {"project_uuid": "00000000-0000-4000-8000-000000000000"}))
+    lines = [r.getMessage() for r in caplog.records if r.name == "kizaru_mcp.audit"]
+    assert len(lines) == 2 and all("tool=list_spaces" in line and "user=None" not in line for line in lines)
+    assert f'"project_uuid": "{project_uuid}"' in lines[0] and lines[0].endswith("error=False")
+    assert lines[1].endswith("error=True")

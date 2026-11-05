@@ -1,4 +1,4 @@
-"""Content lifecycle: unused content, validation errors, moving and deleting content."""
+"""Content: finding charts and dashboards, reading dashboards, unused content, validation errors, moving and deleting."""
 
 import asyncio
 from datetime import UTC, datetime, timedelta
@@ -50,7 +50,59 @@ def _summary(item: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _tile(tile: dict[str, Any], tabs: dict[str, str]) -> dict[str, Any]:
+    properties = tile["properties"]
+    summary = {"type": tile["type"], "title": properties.get("title") or properties.get("chartName")}
+    if tabs:
+        summary["tab"] = tabs.get(tile.get("tabUuid"))
+    if tile["type"] == "saved_chart":
+        summary |= {"chartUuid": properties.get("savedChartUuid"), "chartKind": properties.get("lastVersionChartKind")}
+    elif tile["type"] == "markdown":
+        summary["content"] = properties.get("content")
+    return summary
+
+
 def register(server: MCPServer, provider: LightdashOAuthProvider) -> None:
+    @server.tool(annotations=READ)
+    async def search_content(
+        project_uuid: Uuid, search: str | None = None, content_type: Literal["chart", "dashboard"] | None = None
+    ) -> list[dict[str, Any]]:
+        """Find charts and dashboards by name, or list them all without search.
+        Run a chart with run_chart, and open a dashboard with get_dashboard."""
+        async with lightdash(provider) as ld:
+            items = await _content(ld, project_uuid, search=search, contentTypes=content_type or ["chart", "dashboard"])
+        return [
+            {**_summary(i), "description": i.get("description"), "views": i.get("views"), "lastUpdatedAt": i.get("lastUpdatedAt")}
+            for i in items
+        ]
+
+    @server.tool(annotations=READ)
+    async def get_dashboard(dashboard_uuid: Uuid) -> dict[str, Any]:
+        """Show a dashboard's filters and tiles in layout order: its charts, to run with run_chart and the
+        dashboard's UUID, and its text."""
+        async with lightdash(provider) as ld:
+            dashboard = await ld.get(f"/api/v1/dashboards/{dashboard_uuid}")
+        tabs = sorted(dashboard.get("tabs") or [], key=lambda t: t["order"])
+        names, order = {t["uuid"]: t["name"] for t in tabs}, {t["uuid"]: n for n, t in enumerate(tabs)}
+        tiles = sorted(dashboard["tiles"], key=lambda t: (order.get(t.get("tabUuid"), 0), t["y"], t["x"]))
+        filters = dashboard.get("filters") or {}
+        return {
+            "name": dashboard["name"],
+            "description": dashboard.get("description"),
+            "projectUuid": dashboard["projectUuid"],
+            "space": dashboard.get("spaceName"),
+            "filters": [
+                {
+                    "fieldId": f["target"]["fieldId"],
+                    "operator": f["operator"],
+                    "values": f.get("values"),
+                    "disabled": f.get("disabled", False),
+                }
+                for f in [*filters.get("dimensions", []), *filters.get("metrics", [])]
+            ],
+            "tiles": [_tile(t, names) for t in tiles],
+        }
+
     @server.tool(annotations=READ)
     async def find_unused_content(
         project_uuid: Uuid, unused_days: int = 90, content_type: Literal["chart", "dashboard"] | None = None

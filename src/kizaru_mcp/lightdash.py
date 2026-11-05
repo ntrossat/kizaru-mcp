@@ -1,7 +1,9 @@
 from collections.abc import Awaitable, Callable
-from typing import Any, Self
+from typing import Any
 
 import httpx
+
+TIMEOUT = 60
 
 
 class LightdashError(Exception):
@@ -25,16 +27,18 @@ def _error_message(response: httpx.Response) -> str:
 class LightdashClient:
     """Thin async wrapper over the Lightdash REST API, called as the signed-in user.
 
-    Paths are absolute from the site root (`/api/v1/...`, `/api/v2/...`).
+    Paths are absolute from the site root (`/api/v1/...`, `/api/v2/...`). `http` is shared by every user's
+    client, so calls reuse its connections to Lightdash.
     """
 
-    def __init__(self, base_url: str, access_token: str, refresh: Callable[[], Awaitable[str]] | None = None) -> None:
-        self._http = httpx.AsyncClient(base_url=base_url, timeout=60)
+    def __init__(self, http: httpx.AsyncClient, access_token: str, refresh: Callable[[], Awaitable[str]] | None = None) -> None:
+        self._http = http
         self._token = access_token
         self._refresh = refresh
 
     async def _send(self, method: str, path: str, **kwargs: Any) -> httpx.Response:
-        return await self._http.request(method, path, headers={"Authorization": f"Bearer {self._token}"}, **kwargs)
+        headers = {"Authorization": f"Bearer {self._token}"}
+        return await self._http.request(method, path, headers=headers, timeout=TIMEOUT, **kwargs)
 
     async def request(self, method: str, path: str, **kwargs: Any) -> Any:
         response = await self._send(method, path, **kwargs)
@@ -51,12 +55,3 @@ class LightdashClient:
 
     async def get(self, path: str, **params: Any) -> Any:
         return await self.request("GET", path, params={k: v for k, v in params.items() if v is not None})
-
-    async def aclose(self) -> None:
-        await self._http.aclose()
-
-    async def __aenter__(self) -> Self:
-        return self
-
-    async def __aexit__(self, *exc: object) -> None:
-        await self.aclose()
