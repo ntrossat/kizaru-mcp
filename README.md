@@ -1,5 +1,7 @@
 # Kizaru - Open-source MCP server for Lightdash
 
+[![PyPI](https://img.shields.io/pypi/v/kizaru-mcp)](https://pypi.org/project/kizaru-mcp/)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-blue?logo=docker&logoColor=white)](https://github.com/ntrossat/kizaru-mcp/pkgs/container/kizaru-mcp)
 [![License](https://img.shields.io/badge/license-MIT-yellow)](https://github.com/ntrossat/kizaru-mcp/blob/main/LICENSE)
 [![Python](https://img.shields.io/badge/python-3.15+-blue)](https://github.com/ntrossat/kizaru-mcp/blob/main/pyproject.toml)
 [![MCP](https://img.shields.io/badge/MCP-compatible-green)](https://modelcontextprotocol.io)
@@ -8,35 +10,20 @@
 
 **Kizaru is an open-source [MCP](https://modelcontextprotocol.io) server for self-hosted [Lightdash](https://www.lightdash.com), with per-user sign-in.**
 
-Query your Lightdash data, and manage its access, content and deliveries, from any AI assistant with your Lightdash permissions.
+Query your Lightdash data and manage its dashboards, access and deliveries from any AI assistant, with your own Lightdash permissions.
 
 Works with Claude, ChatGPT, Claude Code and any MCP client that supports OAuth.
 
-![Claude Code querying revenue by country and explaining project access through Kizaru](https://raw.githubusercontent.com/ntrossat/kizaru-mcp/main/docs/demo.gif)
-
-## Use cases
-
-- ["Create a monthly report of Jaffle Shop."](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/use-cases.md#monthly-report)
-
-  ![Claude writing a monthly report of Jaffle Shop with its revenue trend chart](https://raw.githubusercontent.com/ntrossat/kizaru-mcp/main/docs/use-cases/1-monthly-report-trend.jpg)
-
-- ["What was our revenue by country last quarter?"](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/use-cases.md#revenue-by-country)
-- ["Who can see the Finance space, and why?"](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/use-cases.md#space-access)
-- ["Which dashboards has nobody opened in 90 days? Move them to an Archive space."](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/use-cases.md#unused-dashboards)
-- ["List the broken charts and what's wrong with them."](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/use-cases.md#broken-charts)
-- ["Give alice@example.com editor access to Jaffle Shop."](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/use-cases.md#project-access)
-- ["Pause the weekly sales delivery."](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/use-cases.md#deliveries)
-
-See [all use cases with screenshots](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/use-cases.md).
+![Claude Cowork building a Jaffle Shop revenue and orders report with charts through Kizaru](https://raw.githubusercontent.com/ntrossat/kizaru-mcp/main/docs/demo.gif)
 
 ## Features
 
-- **Data:** find charts and dashboards and read their results, list explores and their dimensions and metrics, and run queries with filters, sorts and a row limit.
+- **Data:** ask anything about your data, within your access rights.
 - **Access:** list users, groups and roles. See who can reach a project or a space and why. Grant, change and revoke project access, and manage group membership.
 - **Content:** find charts and dashboards nobody views, list validation errors, move and delete content.
 - **Deliveries:** list scheduled deliveries with their latest run, pause, edit and delete them.
 
-See [all tools](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/tools.md).
+See [use cases with screenshots](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/use-cases.md) and [all tools](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/tools.md).
 
 ## Principles
 
@@ -74,13 +61,13 @@ Needs Python 3.15+, uv, Redis, and a Lightdash instance (tested on 3.93.6). Its 
    uv run kizaru-mcp
    ```
 
-   Or run the package from PyPI, from the directory with `.env`:
+   Or run the [package from PyPI](https://pypi.org/project/kizaru-mcp/), from the directory with `.env`:
 
    ```bash
    uvx kizaru-mcp
    ```
 
-   Or run the Docker image instead, as in [Run](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/configuration.md#run):
+   Or run the [Docker image](https://github.com/ntrossat/kizaru-mcp/pkgs/container/kizaru-mcp) instead, as in [Run](https://github.com/ntrossat/kizaru-mcp/blob/main/docs/configuration.md#run):
 
    ```bash
    docker run --env-file .env -p 8000:8000 ghcr.io/ntrossat/kizaru-mcp
